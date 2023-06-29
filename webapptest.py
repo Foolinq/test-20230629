@@ -3,7 +3,7 @@ import streamlit as st
 st.write("""
 # Les bhy sont on?""")
 
-input = st.text_area(height=10)
+input = st.text_area("","",height=10)
 
 
 st.write("""
