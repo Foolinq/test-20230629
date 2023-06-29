@@ -1,17 +1,14 @@
 import streamlit as st
 
 st.write("""
-# Test(icles)""")
+# Les bhy sont on?""")
 
-input = st.text_area("Ouin", "Les gars sont on?", height=70)
+input = st.text_area(height=10)
 
 
 st.write("""
 ***
 """)
-
-st.header("C on?")
-input
 
 if input == "Oui":
   st.header("Ketttt")
