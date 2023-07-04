@@ -24,8 +24,8 @@ def main():
     # Text input for symptoms
     symptoms = st.text_input('Enter Symptoms')
 
-    # Text input for Langchain LLM model request
-    llm_request = st.text_input('Enter a specific request:')
+    # Text input for doctor's question
+    doctor_question = st.text_input('Enter your question for the Langchain LLM model')
 
     if st.button('Submit'):
         st.write('Patient Information:')
@@ -41,7 +41,7 @@ def main():
             st.write('DNA Sequence: ', dna_sequence)
 
         # Process the Langchain LLM model request
-        result = process_llm_request(llm_request, patient_name, patient_age, patient_bmi, patient_health, symptoms)
+        result = process_llm_request(doctor_question, patient_name, patient_age, patient_bmi, patient_health, symptoms)
         st.write('LLM Result: ', result)
 
 if __name__ == "__main__":
