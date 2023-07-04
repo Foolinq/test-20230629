@@ -21,8 +21,11 @@ def main():
     # File uploader for patient's DNA sequence
     dna_file = st.file_uploader('Upload DNA Sequence', type=['txt', 'fasta'])
 
+    # Text input for symptoms
+    symptoms = st.text_input('Enter Symptoms')
+
     # Text input for Langchain LLM model request
-    llm_request = st.text_input('Enter your request for the Langchain LLM model')
+    llm_request = st.text_input('Enter a specific request:')
 
     if st.button('Submit'):
         st.write('Patient Information:')
@@ -30,6 +33,7 @@ def main():
         st.write('Age: ', patient_age)
         st.write('BMI: ', patient_bmi)
         st.write('Self-described State of Health: ', patient_health)
+        st.write('Symptoms: ', symptoms)
 
         if dna_file is not None:
             # Read the file and store the DNA sequence
@@ -37,7 +41,7 @@ def main():
             st.write('DNA Sequence: ', dna_sequence)
 
         # Process the Langchain LLM model request
-        result = process_llm_request(llm_request)
+        result = process_llm_request(llm_request, patient_name, patient_age, patient_bmi, patient_health, symptoms)
         st.write('LLM Result: ', result)
 
 if __name__ == "__main__":
