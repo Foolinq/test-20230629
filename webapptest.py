@@ -1,4 +1,5 @@
 import streamlit as st
+from llm_processing import process_llm_request
 
 def main():
     st.title('Ovarian Cancer Diagnosis Interface')
@@ -20,6 +21,9 @@ def main():
     # File uploader for patient's DNA sequence
     dna_file = st.file_uploader('Upload DNA Sequence', type=['txt', 'fasta'])
 
+    # Text input for Langchain LLM model request
+    llm_request = st.text_input('Enter your request for the Langchain LLM model')
+
     if st.button('Submit'):
         st.write('Patient Information:')
         st.write('Name: ', patient_name)
@@ -32,10 +36,9 @@ def main():
             dna_sequence = dna_file.getvalue().decode()
             st.write('DNA Sequence: ', dna_sequence)
 
-            # Here you can add the code to process the patient's information
-            # For example, you could call a function that uses a machine learning model to predict the likelihood of ovarian cancer based on the input data
-            # prediction = predict_cancer(patient_age, patient_bmi, patient_health, dna_sequence)
-            # st.write('Cancer Prediction: ', prediction)
+        # Process the Langchain LLM model request
+        result = process_llm_request(llm_request)
+        st.write('LLM Result: ', result)
 
 if __name__ == "__main__":
     main()
