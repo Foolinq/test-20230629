@@ -1,3 +1,12 @@
+# TODO
+# Change column names in gene tables
+# Make tables side-by-side (see ChatGPT 07/05 for this and previous)
+# Make genes associate to their NCIB id
+# Make those their column names
+# Add a total column (maybe?)
+
+
+
 import streamlit as st
 from llm_processing import process_llm_request
 from Bio import Entrez, SeqIO
