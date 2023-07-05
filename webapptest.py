@@ -1,7 +1,6 @@
 import streamlit as st
-import biopython as Bio
 from llm_processing import process_llm_request
-from Bio import Entrez, SeqIO
+from biopython import Entrez, SeqIO
 from collections import Counter
 
 def count_codons(gene_ids, email):
