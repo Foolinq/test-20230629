@@ -4,7 +4,6 @@ from Bio import Entrez, SeqIO
 from collections import Counter
 import pandas as pd
 from Bio.Seq import Seq
-from Bio.Alphabet import IUPAC
 
 def count_codons(gene_ids, email):
     Entrez.email = email
@@ -23,7 +22,7 @@ def count_codons(gene_ids, email):
         codon_counts[gene_id] = codon_count
 
         # translate codons to amino acids and count
-        amino_acids = Seq(sequence, IUPAC.unambiguous_dna).translate()
+        amino_acids = Seq(sequence).translate()
         amino_acid_count = Counter(amino_acids)
         amino_acid_counts[gene_id] = amino_acid_count
 
@@ -89,6 +88,7 @@ def main():
 
         amino_acid_df = pd.DataFrame.from_dict(amino_acid_counts, orient='index')
         st.table(amino_acid_df)
+
 
 if __name__ == "__main__":
     main()
