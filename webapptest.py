@@ -1,6 +1,6 @@
 import streamlit as st
 from llm_processing import process_llm_request
-from biopython import Entrez, SeqIO
+from Bio import Entrez, SeqIO
 from collections import Counter
 
 def count_codons(gene_ids, email):
@@ -71,7 +71,7 @@ def main():
         # Split the gene IDs string into a list
         gene_ids_list = [gene_id.strip() for gene_id in gene_ids.split(',')]
         # Count codons for each gene
-        codon_counts = count_codons(gene_ids_list, "your_email@example.com")  # replace with your email
+        codon_counts = count_codons(gene_ids_list, "parentrdavid@gmail.com")  # replace with your email
         st.write('Codon Counts: ', codon_counts)
 
 if __name__ == "__main__":
