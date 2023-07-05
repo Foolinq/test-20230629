@@ -2,10 +2,14 @@ import streamlit as st
 from llm_processing import process_llm_request
 from Bio import Entrez, SeqIO
 from collections import Counter
+import pandas as pd
+from Bio.Seq import Seq
+from Bio.Alphabet import IUPAC
 
 def count_codons(gene_ids, email):
-    Entrez.email = email  # Always tell NCBI who you are
+    Entrez.email = email
     codon_counts = {}
+    amino_acid_counts = {}
 
     for gene_id in gene_ids:
         handle = Entrez.efetch(db="nucleotide", id=gene_id, rettype="gb", retmode="text")
@@ -13,13 +17,17 @@ def count_codons(gene_ids, email):
         handle.close()
 
         sequence = str(record.seq)
-        codons = [sequence[i:i+3] for i in range(0, len(sequence), 3)]  # split sequence into codons
+        codons = [sequence[i:i+3] for i in range(0, len(sequence), 3)]
 
-        # count codons
         codon_count = Counter(codons)
         codon_counts[gene_id] = codon_count
 
-    return codon_counts
+        # translate codons to amino acids and count
+        amino_acids = Seq(sequence, IUPAC.unambiguous_dna).translate()
+        amino_acid_count = Counter(amino_acids)
+        amino_acid_counts[gene_id] = amino_acid_count
+
+    return codon_counts, amino_acid_counts
 
 def main():
     st.title('Ovarian Cancer Diagnosis Interface')
@@ -44,9 +52,6 @@ def main():
     # Text input for symptoms
     symptoms = st.text_input('Enter Symptoms')
 
-    # Text input for gene IDs
-    gene_ids = st.text_input('Enter Gene IDs (comma-separated)')
-
     # Text input for doctor's question
     doctor_question = st.text_input('Enter your question for the Langchain LLM model')
 
@@ -67,12 +72,23 @@ def main():
         result = process_llm_request(doctor_question, patient_name, patient_age, patient_bmi, patient_health, symptoms)
         st.write('LLM Result: ', result)
 
+    # add a horizontal line and a title
+    st.markdown("---")
+    st.markdown("# Gene Analysis")
+
+    # gene input and submit boxes
+    gene_ids = st.text_input('Enter Gene IDs (comma-separated)')
+
     if st.button('Submit Gene IDs'):
-        # Split the gene IDs string into a list
         gene_ids_list = [gene_id.strip() for gene_id in gene_ids.split(',')]
-        # Count codons for each gene
-        codon_counts = count_codons(gene_ids_list, "parentrdavid@gmail.com")  # replace with your email
-        st.write('Codon Counts: ', codon_counts)
+        codon_counts, amino_acid_counts = count_codons(gene_ids_list, "parentrdavid@gmail.com")
+
+        # convert dictionaries to pandas DataFrames and display as tables
+        codon_df = pd.DataFrame.from_dict(codon_counts, orient='index')
+        st.table(codon_df)
+
+        amino_acid_df = pd.DataFrame.from_dict(amino_acid_counts, orient='index')
+        st.table(amino_acid_df)
 
 if __name__ == "__main__":
     main()
