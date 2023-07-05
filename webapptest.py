@@ -5,6 +5,16 @@ from collections import Counter
 import pandas as pd
 from Bio.Seq import Seq
 
+# dictionary to map single-letter codes to full names of amino acids
+amino_acid_names = {
+    'A': 'Alanine', 'C': 'Cysteine', 'D': 'Aspartic acid', 'E': 'Glutamic acid',
+    'F': 'Phenylalanine', 'G': 'Glycine', 'H': 'Histidine', 'I': 'Isoleucine',
+    'K': 'Lysine', 'L': 'Leucine', 'M': 'Methionine', 'N': 'Asparagine',
+    'P': 'Proline', 'Q': 'Glutamine', 'R': 'Arginine', 'S': 'Serine',
+    'T': 'Threonine', 'V': 'Valine', 'W': 'Tryptophan', 'Y': 'Tyrosine',
+    '*': 'Stop codon'
+}
+
 def count_codons(gene_ids, email):
     Entrez.email = email
     codon_counts = {}
@@ -24,6 +34,8 @@ def count_codons(gene_ids, email):
         # translate codons to amino acids and count
         amino_acids = Seq(sequence).translate()
         amino_acid_count = Counter(amino_acids)
+        # replace single-letter codes with full names
+        amino_acid_count = {amino_acid_names.get(k, k): v for k, v in amino_acid_count.items()}
         amino_acid_counts[gene_id] = amino_acid_count
 
     return codon_counts, amino_acid_counts
@@ -83,10 +95,10 @@ def main():
         codon_counts, amino_acid_counts = count_codons(gene_ids_list, "parentrdavid@gmail.com")
 
         # convert dictionaries to pandas DataFrames and display as tables
-        codon_df = pd.DataFrame.from_dict(codon_counts, orient='index')
+        codon_df = pd.DataFrame.from_dict(codon_counts, orient='index').transpose()
         st.table(codon_df)
 
-        amino_acid_df = pd.DataFrame.from_dict(amino_acid_counts, orient='index')
+        amino_acid_df = pd.DataFrame.from_dict(amino_acid_counts, orient='index').transpose()
         st.table(amino_acid_df)
 
 
