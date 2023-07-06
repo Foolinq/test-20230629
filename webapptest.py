@@ -30,27 +30,31 @@ def count_codons(gene_ids, email):
     amino_acid_counts = {}
 
     for gene_id in gene_ids:
-        handle = Entrez.efetch(db="nucleotide", id=gene_id, rettype="fasta", retmode="text")
+        handle = Entrez.efetch(db="nucleotide", id=gene_id, rettype="gb", retmode="text")
         record = SeqIO.read(handle, "genbank")
         handle.close()
 
-        sequence = str(record.seq)
+        # find the CDS feature
+        for feature in record.features:
+            if feature.type == "CDS":
+                # extract the CDS sequence
+                sequence = str(feature.extract(record.seq))
+
+                st.write(f"CDS for gene ID {gene_id}: {sequence}")  # output the CDS
+
+                codons = [sequence[i:i+3] for i in range(0, len(sequence), 3)]
         
-        st.write(f"Sequence for gene ID {gene_id}: {sequence}")  # print out the sequence
+                st.write(f"Codons for gene ID {gene_id}: {codons}")  # output the list of codons
 
-        codons = [sequence[i:i+3] for i in range(0, len(sequence), 3)]
-        
-        st.write(f"Codons for gene ID {gene_id}: {codons}")  # print out the list of codons
+                codon_count = Counter(codons)
+                codon_counts[gene_id] = codon_count
 
-        codon_count = Counter(codons)
-        codon_counts[gene_id] = codon_count
-
-        # translate codons to amino acids and count
-        amino_acids = Seq(sequence).translate()
-        amino_acid_count = Counter(amino_acids)
-        # replace single-letter codes with full names
-        amino_acid_count = {amino_acid_names.get(k, k): v for k, v in amino_acid_count.items()}
-        amino_acid_counts[gene_id] = amino_acid_count
+                # translate codons to amino acids and count
+                amino_acids = Seq(sequence).translate()
+                amino_acid_count = Counter(amino_acids)
+                # replace single-letter codes with full names
+                amino_acid_count = {amino_acid_names.get(k, k): v for k, v in amino_acid_count.items()}
+                amino_acid_counts[gene_id] = amino_acid_count
 
     return codon_counts, amino_acid_counts
 
