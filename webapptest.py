@@ -36,11 +36,11 @@ def count_codons(gene_ids, email):
 
         sequence = str(record.seq)
         
-        print(f"Sequence for gene ID {gene_id}: {sequence}")  # print out the sequence
+        st.write(f"Sequence for gene ID {gene_id}: {sequence}")  # print out the sequence
 
         codons = [sequence[i:i+3] for i in range(0, len(sequence), 3)]
         
-        print(f"Codons for gene ID {gene_id}: {codons}")  # print out the list of codons
+        st.write(f"Codons for gene ID {gene_id}: {codons}")  # print out the list of codons
 
         codon_count = Counter(codons)
         codon_counts[gene_id] = codon_count
