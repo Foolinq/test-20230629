@@ -30,7 +30,7 @@ def count_codons(gene_ids, email):
     amino_acid_counts = {}
 
     for gene_id in gene_ids:
-        handle = Entrez.efetch(db="nucleotide", id=gene_id, rettype="gb", retmode="text")
+        handle = Entrez.efetch(db="nucleotide", id=gene_id, rettype="fasta", retmode="text")
         record = SeqIO.read(handle, "genbank")
         handle.close()
 
