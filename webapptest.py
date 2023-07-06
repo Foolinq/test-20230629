@@ -35,7 +35,12 @@ def count_codons(gene_ids, email):
         handle.close()
 
         sequence = str(record.seq)
+        
+        print(f"Sequence for gene ID {gene_id}: {sequence}")  # print out the sequence
+
         codons = [sequence[i:i+3] for i in range(0, len(sequence), 3)]
+        
+        print(f"Codons for gene ID {gene_id}: {codons}")  # print out the list of codons
 
         codon_count = Counter(codons)
         codon_counts[gene_id] = codon_count
@@ -48,6 +53,7 @@ def count_codons(gene_ids, email):
         amino_acid_counts[gene_id] = amino_acid_count
 
     return codon_counts, amino_acid_counts
+
 
 def main():
     st.title('Ovarian Cancer Diagnosis Interface')
