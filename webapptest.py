@@ -82,11 +82,27 @@ def main():
     # Slider for patient's age
     patient_age = st.slider('Patient Age', 0, 100, 50)
 
-    # Slider for patient's BMI
-    patient_bmi = st.slider('Patient BMI', 10.0, 50.0, 25.0)
+    # Slider for patient's weight and height
+    patient_weight = st.slider('Patient Weight (kg)', 30.0, 150.0, 70.0)
+    patient_height = st.slider('Patient Height (m)', 1.0, 2.5, 1.7)
+    
+    # Calculate BMI
+    patient_bmi = patient_weight / patient_height**2
 
-    # Text input for self-described state of health
-    patient_health = st.text_input('Self-described State of Health')
+    # Select box for sex at birth
+    patient_sex = st.selectbox('Sex at Birth', ['Male', 'Female'])
+
+    # Select box for recent physical activity level
+    patient_activity = st.selectbox(
+        'Recent Physical Activity Level',
+        [
+            "No physical activity",
+            "Light physical activity (e.g., walks, light housework)",
+            "Moderate physical activity (e.g., brisk walking, cycling)",
+            "Intense physical activity (e.g., running, heavy lifting)",
+            "Very intense physical activity (e.g., athlete in training)"
+        ]
+    )
 
     # File uploader for patient's DNA sequence
     dna_file = st.file_uploader('Upload DNA Sequence', type=['txt', 'fasta'])
@@ -94,15 +110,18 @@ def main():
     # Text input for symptoms
     symptoms = st.text_input('Enter Symptoms')
 
-    # Text input for doctor's question
-    doctor_question = st.text_input('Enter your question for the Langchain LLM model')
+    # Text input for doctor's question with updated label
+    doctor_question = st.text_input('Enter your question or concern regarding the patient')
 
     if st.button('Submit Patient Information'):
         st.write('Patient Information:')
         st.write('Name: ', patient_name)
         st.write('Age: ', patient_age)
+        st.write('Weight (kg): ', patient_weight)
+        st.write('Height (m): ', patient_height)
         st.write('BMI: ', patient_bmi)
-        st.write('Self-described State of Health: ', patient_health)
+        st.write('Sex at Birth: ', patient_sex)
+        st.write('Recent Physical Activity Level: ', patient_activity)
         st.write('Symptoms: ', symptoms)
 
         if dna_file is not None:
@@ -111,7 +130,10 @@ def main():
             st.write('DNA Sequence: ', dna_sequence)
 
         # Process the Langchain LLM model request
-        result = process_llm_request(doctor_question, patient_name, patient_age, patient_bmi, patient_health, symptoms)
+        result = process_llm_request(
+            doctor_question, patient_name, patient_age, patient_bmi,
+            patient_sex, patient_activity, symptoms
+        )
         st.write('LLM Result: ', result)
 
     # add a horizontal line and a title
@@ -125,12 +147,23 @@ def main():
         gene_ids_list = [gene_id.strip() for gene_id in gene_ids.split(',')]
         codon_counts, amino_acid_counts = count_codons(gene_ids_list, "parentrdavid@gmail.com")
 
-        # convert dictionaries to pandas DataFrames and display as tables
+        # Convert dictionaries to pandas DataFrames
         codon_df = pd.DataFrame.from_dict(codon_counts, orient='index').transpose()
-        st.table(codon_df)
-
         amino_acid_df = pd.DataFrame.from_dict(amino_acid_counts, orient='index').transpose()
-        st.table(amino_acid_df)
+
+        # Add a total count column
+        codon_df['Total'] = codon_df.sum(axis=1)
+        amino_acid_df['Total'] = amino_acid_df.sum(axis=1)
+
+        # Create two columns for side-by-side layout
+        col1, col2 = st.beta_columns(2)
+
+        # Display tables side by side
+        with col1:
+            st.table(codon_df)
+        with col2:
+            st.table(amino_acid_df)
+
 
 
 if __name__ == "__main__":
