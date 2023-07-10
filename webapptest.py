@@ -36,7 +36,7 @@ amino_acid_names = {
     '*': 'Stop codon'
 }
 
-def count_codons(gene_ids, email):
+def count_codons(gene_ids, email, debug_mode):
     Entrez.email = email
     codon_counts = {}
     amino_acid_counts = {}
@@ -52,16 +52,20 @@ def count_codons(gene_ids, email):
             amino_acid_count = Counter()
 
             # find the CDS feature
+            cds_count = 0
             for feature in record.features:
                 if feature.type == "CDS":
+                    cds_count += 1
                     # extract the CDS sequence
                     sequence = str(feature.extract(record.seq))
 
-                    st.write(f"CDS for gene ID {gene_id}: {sequence}")  # output the CDS
+                    if debug_mode:
+                        st.write(f"CDS {cds_count} for gene ID {gene_id}: {sequence}")  # output the CDS
 
                     codons = [sequence[i:i+3] for i in range(0, len(sequence), 3)]
-            
-                    st.write(f"Codons for gene ID {gene_id}: {codons}")  # output the list of codons
+                    
+                    if debug_mode:
+                        st.write(f"Codons for gene ID {gene_id}: {codons}")  # output the list of codons
 
                     # update codon count
                     codon_count.update(codons)
@@ -69,6 +73,11 @@ def count_codons(gene_ids, email):
                     # translate codons to amino acids and update count
                     amino_acids = Seq(sequence).translate()
                     amino_acid_count.update(amino_acids)
+
+            if debug_mode:
+                st.write(f"Number of CDS for gene ID {gene_id}: {cds_count}")
+                st.write(f"Codon counts for gene ID {gene_id}: {codon_count}")
+                st.write(f"Amino acid counts for gene ID {gene_id}: {amino_acid_count}")
 
             # replace single-letter codes with full names
             amino_acid_count = {amino_acid_names.get(k, k): v for k, v in amino_acid_count.items()}
@@ -78,7 +87,8 @@ def count_codons(gene_ids, email):
             amino_acid_counts[gene_id] = amino_acid_count
 
         except Exception as e:
-            st.write(f"Error fetching data for gene ID {gene_id}: {e}")
+            if debug_mode:
+                st.write(f"Error processing gene ID {gene_id}: {str(e)}")
 
     return codon_counts, amino_acid_counts
 
@@ -162,10 +172,11 @@ def main():
 
     # gene input and submit boxes
     gene_ids = st.text_input('Enter Gene IDs (comma-separated)')
+    debug_mode = st.checkbox('Activate Debug Mode')  # add this line
 
     if st.button('Submit Gene IDs'):
         gene_ids_list = [gene_id.strip() for gene_id in gene_ids.split(',')]
-        codon_counts, amino_acid_counts = count_codons(gene_ids_list, "parentrdavid@gmail.com")
+        codon_counts, amino_acid_counts = count_codons(gene_ids_list, "parentrdavid@gmail.com", debug_mode)  # pass debug_mode to the function
 
         # Convert dictionaries to pandas DataFrames
         codon_df = pd.DataFrame.from_dict(codon_counts, orient='index').transpose()
