@@ -42,9 +42,11 @@ def count_codons(gene_ids, email):
     amino_acid_counts = {}
 
     for gene_id in gene_ids:
-        handle = Entrez.efetch(db="nucleotide", id=gene_id, rettype="gb", retmode="text")
-        record = SeqIO.read(handle, "genbank")
-        handle.close()
+        try:
+            handle = Entrez.efetch(db="nucleotide", id=gene_id, rettype="gb", retmode="text")
+            record = SeqIO.read(handle, "genbank")
+            handle.close()
+
 
         # initialize counters for this gene
         codon_count = Counter()
@@ -76,7 +78,12 @@ def count_codons(gene_ids, email):
         codon_counts[gene_id] = codon_count
         amino_acid_counts[gene_id] = amino_acid_count
 
+        except Exception as e:
+            st.write(f"Error fetching data for gene ID {gene_id}: {e}")
+
     return codon_counts, amino_acid_counts
+
+
 
 def main():
     st.title('Ovarian Cancer Diagnosis Interface')
