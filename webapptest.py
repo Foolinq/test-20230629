@@ -158,7 +158,7 @@ def main():
     gene_ids = st.text_input('Enter Gene IDs (comma-separated)')
 
     if st.button('Submit Gene IDs'):
-        gene_ids_list = [gene_id.strip() for gene_id in gene_ids.split(', ')]
+        gene_ids_list = [gene_id.strip() for gene_id in gene_ids.split(',')]
         codon_counts, amino_acid_counts = count_codons(gene_ids_list, "parentrdavid@gmail.com")
 
         # Convert dictionaries to pandas DataFrames
