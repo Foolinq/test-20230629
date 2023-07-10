@@ -1,9 +1,21 @@
-# TODO
+# This program has two elements: first, a LLM-powered diagnosis tool for doctors.
+# second, a tool to separate coding sequences of genes into individual codons and amino acids
+# The goal is to eventually have a tool which doctors will be able to use to detect early cancer (namely ovarian cancer) using DNA samples from patients
+
+
+# TODO:
 # Change column names in gene tables
-# Make tables side-by-side (see ChatGPT 07/05 for this and previous)
-# Make genes associate to their NCIB id
-# Make those their column names
-# Add a total column (maybe?)
+# Make codon tables side-by-side
+# Find way for gene ID input to actually be gene name input to make more user-friendly
+# Make those gene names their column names
+# Add a total codon and amino acid count column
+# Find possible symptom database, then use that database to make a scrolldown selection menu instead of text box
+# Change BMI input to weight and height, and calculate BMI using those inputs
+# Change "Enter question for the LLM" part to say something along the lines of "Question/concern regarding patient"
+# Add a "sex at birth" input (scrolldown two options: male and female)
+# Refine prompt to aim towards cancer detection
+
+
 
 
 
