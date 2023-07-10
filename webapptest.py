@@ -131,8 +131,15 @@ def main():
 
         # Process the Langchain LLM model request
         result = process_llm_request(
-            doctor_question, patient_name, patient_age, patient_bmi,
-            patient_sex, patient_activity, symptoms
+            doctor_question, 
+            patient_name, 
+            patient_age, 
+            patient_weight,
+            patient_height,
+            patient_bmi, 
+            patient_sex, 
+            patient_activity, 
+            symptoms
         )
         st.write('LLM Result: ', result)
 
