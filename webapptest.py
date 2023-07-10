@@ -47,36 +47,35 @@ def count_codons(gene_ids, email):
             record = SeqIO.read(handle, "genbank")
             handle.close()
 
+            # initialize counters for this gene
+            codon_count = Counter()
+            amino_acid_count = Counter()
 
-        # initialize counters for this gene
-        codon_count = Counter()
-        amino_acid_count = Counter()
+            # find the CDS feature
+            for feature in record.features:
+                if feature.type == "CDS":
+                    # extract the CDS sequence
+                    sequence = str(feature.extract(record.seq))
 
-        # find the CDS feature
-        for feature in record.features:
-            if feature.type == "CDS":
-                # extract the CDS sequence
-                sequence = str(feature.extract(record.seq))
+                    st.write(f"CDS for gene ID {gene_id}: {sequence}")  # output the CDS
 
-                st.write(f"CDS for gene ID {gene_id}: {sequence}")  # output the CDS
+                    codons = [sequence[i:i+3] for i in range(0, len(sequence), 3)]
+            
+                    st.write(f"Codons for gene ID {gene_id}: {codons}")  # output the list of codons
 
-                codons = [sequence[i:i+3] for i in range(0, len(sequence), 3)]
-        
-                st.write(f"Codons for gene ID {gene_id}: {codons}")  # output the list of codons
+                    # update codon count
+                    codon_count.update(codons)
 
-                # update codon count
-                codon_count.update(codons)
+                    # translate codons to amino acids and update count
+                    amino_acids = Seq(sequence).translate()
+                    amino_acid_count.update(amino_acids)
 
-                # translate codons to amino acids and update count
-                amino_acids = Seq(sequence).translate()
-                amino_acid_count.update(amino_acids)
+            # replace single-letter codes with full names
+            amino_acid_count = {amino_acid_names.get(k, k): v for k, v in amino_acid_count.items()}
 
-        # replace single-letter codes with full names
-        amino_acid_count = {amino_acid_names.get(k, k): v for k, v in amino_acid_count.items()}
-
-        # store counts for this gene
-        codon_counts[gene_id] = codon_count
-        amino_acid_counts[gene_id] = amino_acid_count
+            # store counts for this gene
+            codon_counts[gene_id] = codon_count
+            amino_acid_counts[gene_id] = amino_acid_count
 
         except Exception as e:
             st.write(f"Error fetching data for gene ID {gene_id}: {e}")
