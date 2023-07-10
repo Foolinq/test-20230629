@@ -4,15 +4,9 @@
 
 
 # TODO:
-# Change column names in gene tables
-# Make codon tables side-by-side
+# Change column names in gene tables to gene names
 # Find way for gene ID input to actually be gene name input to make more user-friendly
-# Make those gene names their column names
-# Add a total codon and amino acid count column
 # Find possible symptom database, then use that database to make a scrolldown selection menu instead of text box
-# Change BMI input to weight and height, and calculate BMI using those inputs
-# Change "Enter question for the LLM" part to say something along the lines of "Question/concern regarding patient"
-# Add a "sex at birth" input (scrolldown two options: male and female)
 # Refine prompt to aim towards cancer detection
 
 
