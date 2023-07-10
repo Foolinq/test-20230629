@@ -46,6 +46,10 @@ def count_codons(gene_ids, email):
         record = SeqIO.read(handle, "genbank")
         handle.close()
 
+        # initialize counters for this gene
+        codon_count = Counter()
+        amino_acid_count = Counter()
+
         # find the CDS feature
         for feature in record.features:
             if feature.type == "CDS":
@@ -58,18 +62,21 @@ def count_codons(gene_ids, email):
         
                 st.write(f"Codons for gene ID {gene_id}: {codons}")  # output the list of codons
 
-                codon_count = Counter(codons)
-                codon_counts[gene_id] = codon_count
+                # update codon count
+                codon_count.update(codons)
 
-                # translate codons to amino acids and count
+                # translate codons to amino acids and update count
                 amino_acids = Seq(sequence).translate()
-                amino_acid_count = Counter(amino_acids)
-                # replace single-letter codes with full names
-                amino_acid_count = {amino_acid_names.get(k, k): v for k, v in amino_acid_count.items()}
-                amino_acid_counts[gene_id] = amino_acid_count
+                amino_acid_count.update(amino_acids)
+
+        # replace single-letter codes with full names
+        amino_acid_count = {amino_acid_names.get(k, k): v for k, v in amino_acid_count.items()}
+
+        # store counts for this gene
+        codon_counts[gene_id] = codon_count
+        amino_acid_counts[gene_id] = amino_acid_count
 
     return codon_counts, amino_acid_counts
-
 
 def main():
     st.title('Ovarian Cancer Diagnosis Interface')
