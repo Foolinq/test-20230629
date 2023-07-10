@@ -171,6 +171,10 @@ def main():
         codon_df = pd.DataFrame.from_dict(codon_counts, orient='index').transpose()
         amino_acid_df = pd.DataFrame.from_dict(amino_acid_counts, orient='index').transpose()
 
+        # Replace NA values with 0 and convert to integer
+        codon_df = codon_df.fillna(0).astype(int)
+        amino_acid_df = amino_acid_df.fillna(0).astype(int)
+
         # Add a total count column
         codon_df['Total'] = codon_df.sum(axis=1)
         amino_acid_df['Total'] = amino_acid_df.sum(axis=1)
