@@ -163,7 +163,7 @@ def main():
         amino_acid_df['Total'] = amino_acid_df.sum(axis=1)
 
         # Create two columns for side-by-side layout
-        col1, col2 = st.beta_columns(2)
+        col1, col2 = st.columns(2)
 
         # Display tables side by side
         with col1:
