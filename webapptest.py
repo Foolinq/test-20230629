@@ -35,8 +35,8 @@ def count_codons(gene_ids, email, debug_mode):
 
     for gene_id in gene_ids:
         try:
-            handle = Entrez.efetch(db="nucleotide", id=gene_id, rettype="fasta_cds_na", retmode="text")
-            record = SeqIO.read(handle, "fasta")
+            handle = Entrez.efetch(db="nucleotide", id=gene_id, rettype="gb", retmode="text")
+            record = SeqIO.read(handle, "genbank")
             handle.close()
 
             # initialize counters for this gene
