@@ -39,6 +39,17 @@ def count_codons(gene_ids, email, debug_mode):
             record = SeqIO.read(handle, "genbank")
             handle.close()
 
+            # Check if there's a CDS feature in the record
+            cds_found = False
+            for feature in record.features:
+                if feature.type == "CDS":
+                    cds_found = True
+                    break
+            
+            if not cds_found:
+                raise ValueError(f"No CDS feature found for gene ID {gene_id}")
+            
+            
             # initialize counters for this gene
             codon_count = Counter()
             amino_acid_count = Counter()
