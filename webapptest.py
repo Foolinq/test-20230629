@@ -231,19 +231,7 @@ def clean_genes_in_excel(input_filepath, output_filepath, email, api_key, debug_
     # Iterate over the gene symbols
     for gene_symbol in gene_symbols:
         try:
-            # Search for the gene symbol in the "gene" database
-            search_handle = Entrez.esearch(db="gene", term=f"{gene_symbol} AND Homo sapiens[orgn]")
-            search_record = Entrez.read(search_handle)
-            search_handle.close()
-
-            # If no gene ID was found for this symbol, continue to the next one
-            if not search_record["IdList"]:
-                if debug_mode:
-                    st.write(f"No gene ID found for gene symbol {gene_symbol}")
-                continue
-
-            # Use the first gene ID found for this symbol
-            gene_id = search_record["IdList"][0]
+            gene_id = get_gene_id(gene_symbol, email, api_key)
 
             # Fetch the gene record
             handle = Entrez.efetch(db="nucleotide", id=gene_id, rettype="gb", retmode="text")
