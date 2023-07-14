@@ -54,7 +54,7 @@ def count_codons(gene_symbols, email, api_key, debug_mode):
 
     for gene_symbol in gene_symbols:
         try:
-            gene_id = get_gene_id(gene_symbol, "Homo sapiens")
+            gene_id = get_gene_id(gene_symbol, "Homo sapiens", api_key)
 
             handle = Entrez.efetch(db="nucleotide", id=gene_id, rettype="gb", retmode="text")
             record = SeqIO.read(handle, "genbank")
