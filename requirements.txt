@@ -2,3 +2,4 @@ streamlit
 langchain==0.0.197
 openai
 biopython
+openpyxl
