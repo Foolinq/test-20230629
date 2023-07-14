@@ -29,6 +29,22 @@ amino_acid_names = {
     '*': 'Stop codon'
 }
 
+def get_gene_id(gene_symbol, email, api_key):
+    Entrez.email = email
+    Entrez.api_key = api_key
+
+    # Search for the gene symbol in the "gene" database
+    handle = Entrez.esearch(db="gene", term=f"{gene_symbol}[Gene] AND Homo sapiens[Organism]")
+    record = Entrez.read(handle)
+    handle.close()
+
+    try:
+        # Return the first Gene ID
+        return record["IdList"][0]
+    except IndexError:
+        # Return None if no Gene ID was found
+        return None
+
 
 def count_codons(gene_symbols, email, api_key, debug_mode):
     Entrez.email = email
@@ -38,14 +54,7 @@ def count_codons(gene_symbols, email, api_key, debug_mode):
 
     for gene_symbol in gene_symbols:
         try:
-            search_handle = Entrez.esearch(db="gene", term=f"{gene_symbol} AND Homo sapiens[orgn]")
-            search_record = Entrez.read(search_handle)
-            search_handle.close()
-
-            if not search_record["IdList"]:
-                raise ValueError(f"No gene ID found for gene symbol {gene_symbol}")
-
-            gene_id = search_record["IdList"][0]
+            gene_id = get_gene_id(gene_symbol, "Homo sapiens")
 
             handle = Entrez.efetch(db="nucleotide", id=gene_id, rettype="gb", retmode="text")
             record = SeqIO.read(handle, "genbank")
