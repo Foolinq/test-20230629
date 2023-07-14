@@ -10,12 +10,14 @@
 # Refine prompt to aim towards cancer detection
 
 
-import streamlit as st
-from llm_processing import process_llm_request
+import os
+import time
 from Bio import Entrez, SeqIO
 from collections import Counter
-import pandas as pd
 from Bio.Seq import Seq
+import pandas as pd
+import streamlit as st
+from llm_processing import process_llm_request
 
 # dictionary to map single-letter codes to full names of amino acids
 amino_acid_names = {
@@ -28,13 +30,23 @@ amino_acid_names = {
 }
 
 
-def count_codons(gene_ids, email, debug_mode):
+def count_codons(gene_symbols, email, api_key, debug_mode):
     Entrez.email = email
+    Entrez.api_key = api_key
     codon_counts = {}
     amino_acid_counts = {}
 
-    for gene_id in gene_ids:
+    for gene_symbol in gene_symbols:
         try:
+            search_handle = Entrez.esearch(db="gene", term=f"{gene_symbol} AND Homo sapiens[orgn]")
+            search_record = Entrez.read(search_handle)
+            search_handle.close()
+
+            if not search_record["IdList"]:
+                raise ValueError(f"No gene ID found for gene symbol {gene_symbol}")
+
+            gene_id = search_record["IdList"][0]
+
             handle = Entrez.efetch(db="nucleotide", id=gene_id, rettype="gb", retmode="text")
             record = SeqIO.read(handle, "genbank")
             handle.close()
@@ -91,7 +103,10 @@ def count_codons(gene_ids, email, debug_mode):
 
         except Exception as e:
             if debug_mode:
-                st.write(f"Error processing gene ID {gene_id}: {str(e)}")
+                st.write(f"Error processing gene symbol {gene_symbol}: {str(e)}")
+
+        # Wait for 0.1 seconds to respect the rate limit of 10 requests per second
+        time.sleep(0.1)
 
     return codon_counts, amino_acid_counts
 
@@ -163,15 +178,14 @@ def process_patient_info(patient_info):
         st.write('LLM Result: ', result)
 
 
-def get_gene_ids():
-    gene_ids = st.text_input('Enter Gene IDs (comma-separated)')
+def get_gene_symbols():
+    gene_symbols = st.text_input('Enter Gene Symbols (comma-separated)')
     debug_mode = st.checkbox('Activate Debug Mode')
-    return gene_ids, debug_mode
+    return gene_symbols, debug_mode
 
-
-def process_gene_ids(gene_ids, debug_mode):
-    gene_ids_list = [gene_id.strip() for gene_id in gene_ids.split(',')]
-    codon_counts, amino_acid_counts = count_codons(gene_ids_list, "parentrdavid@gmail.com", debug_mode)
+def process_gene_symbols(gene_symbols, debug_mode):
+    gene_symbols_list = [gene_symbol.strip() for gene_symbol in gene_symbols.split(',')]
+    codon_counts, amino_acid_counts = count_codons(gene_symbols_list, "parentrdavid@gmail.com", os.getenv('NCBI_API_KEY'), debug_mode)
 
     # Convert dictionaries to pandas DataFrames
     codon_df = pd.DataFrame.from_dict(codon_counts, orient='index').transpose()
@@ -208,10 +222,10 @@ def main():
     st.markdown("---")
     st.markdown("# Gene Analysis")
 
-    gene_ids, debug_mode = get_gene_ids()
+    gene_symbols, debug_mode = get_gene_symbols()
 
-    if st.button('Submit Gene IDs'):
-        process_gene_ids(gene_ids, debug_mode)
+    if st.button('Submit Gene Symbols'):
+        process_gene_symbols(gene_symbols, debug_mode)
 
 if __name__ == "__main__":
     main()
