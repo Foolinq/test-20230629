@@ -209,23 +209,108 @@ def process_gene_symbols(gene_symbols, debug_mode):
         st.table(amino_acid_df)
 
 
-def main():
-    st.title('Ovarian Cancer Diagnosis Interface')
+def clean_genes_in_excel(input_filepath, output_filepath, email, api_key, debug_mode):
+    # Read the Excel file
+    df = pd.read_excel(input_filepath)
 
+    # Get a list of gene symbols from the column names
+    gene_symbols = df.columns.tolist()
+
+    # Initialize a list to hold gene symbols that have at least one CDS
+    valid_genes = []
+
+    # Iterate over the gene symbols
+    for gene_symbol in gene_symbols:
+        try:
+            # Search for the gene symbol in the "gene" database
+            search_handle = Entrez.esearch(db="gene", term=f"{gene_symbol} AND Homo sapiens[orgn]")
+            search_record = Entrez.read(search_handle)
+            search_handle.close()
+
+            # If no gene ID was found for this symbol, continue to the next one
+            if not search_record["IdList"]:
+                if debug_mode:
+                    st.write(f"No gene ID found for gene symbol {gene_symbol}")
+                continue
+
+            # Use the first gene ID found for this symbol
+            gene_id = search_record["IdList"][0]
+
+            # Fetch the gene record
+            handle = Entrez.efetch(db="nucleotide", id=gene_id, rettype="gb", retmode="text")
+            record = SeqIO.read(handle, "genbank")
+            handle.close()
+
+            # Check if there's a CDS feature in the record
+            cds_found = False
+            for feature in record.features:
+                if feature.type == "CDS":
+                    cds_found = True
+                    break
+            
+            if cds_found:
+                valid_genes.append(gene_symbol)
+            elif debug_mode:
+                st.write(f"No CDS feature found for gene symbol {gene_symbol}")
+
+        except Exception as e:
+            if debug_mode:
+                st.write(f"Error processing gene symbol {gene_symbol}: {str(e)}")
+
+        # Wait for 0.1 seconds to respect the rate limit of 10 requests per second
+        time.sleep(0.1)
+
+    # Keep only the columns for valid genes
+    df_clean = df[valid_genes]
+
+    # Write the cleaned DataFrame to the output Excel file
+    df_clean.to_excel(output_filepath, index=False)
+
+
+'''
+Streamlit section functions, contain calls to all other functions
+'''
+
+
+def patient_info_section():
     st.write('Please enter the patient information below:')
-
     patient_info = get_patient_info()
     if st.button('Submit Patient Information'):
         process_patient_info(patient_info)
 
-    # add a horizontal line and a title
+def gene_analysis_section():
     st.markdown("---")
     st.markdown("# Gene Analysis")
-
     gene_symbols, debug_mode = get_gene_symbols()
-
     if st.button('Submit Gene Symbols'):
         process_gene_symbols(gene_symbols, debug_mode)
+
+def excel_cleaning_section():
+    st.markdown("---")
+    st.markdown("# Clean Gene Columns in Excel")
+    debug_mode = st.checkbox('Activate Debug Mode for Excel Cleaning')
+    input_file = st.file_uploader('Upload Excel File', type=['xlsx'])
+    if st.button('Clean Excel File') and input_file is not None:
+        # Save the uploaded file to a temporary file
+        input_filepath = 'input.xlsx'
+        with open(input_filepath, 'wb') as f:
+            f.write(input_file.getbuffer())
+        output_filepath = 'output.xlsx'
+        clean_genes_in_excel(input_filepath, output_filepath, "parentrdavid@gmail.com", os.getenv('NCBI_API_KEY'), debug_mode)
+        # Offer the cleaned file for download
+        st.markdown(f'[Download Cleaned Excel File]({output_filepath})')
+
+
+'''
+Main function below, only contains calls to section functions
+'''
+
+
+def main():
+    st.title('Ovarian Cancer Diagnosis Interface')
+    patient_info_section()
+    gene_analysis_section()
+    excel_cleaning_section()
 
 if __name__ == "__main__":
     main()
