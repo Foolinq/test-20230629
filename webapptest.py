@@ -267,9 +267,7 @@ def clean_genes_in_excel(input_filepath, output_filepath, email, api_key, debug_
     df_clean.to_excel(output_filepath, index=False)
 
 
-'''
-Streamlit section functions, contain calls to all other functions
-'''
+# Streamlit section functions, contain calls to all other functions
 
 
 def patient_info_section():
@@ -301,9 +299,7 @@ def excel_cleaning_section():
         st.markdown(f'[Download Cleaned Excel File]({output_filepath})')
 
 
-'''
-Main function below, only contains calls to section functions
-'''
+# Main function below, only contains calls to section functions
 
 
 def main():
