@@ -3,16 +3,15 @@ import requests
 import concurrent.futures
 import time
 
-# Function to convert HGNC symbols to Ensembl IDs
-def symbols_to_ids(gene_symbols):
+# Function to convert HGNC symbol to Ensembl ID
+def symbol_to_id(gene_symbol):
     server = "https://rest.ensembl.org"
-    ext = "/xrefs/symbol/homo_sapiens/?content-type=application/json"
-    data = {"symbols": gene_symbols}
-    r = requests.post(server+ext, headers={ "Content-Type" : "application/json"}, json=data)
+    ext = f"/xrefs/symbol/homo_sapiens/{gene_symbol}?content-type=application/json"
+    r = requests.get(server+ext, headers={ "Content-Type" : "application/json"})
     if not r.ok:
         r.raise_for_status()
     decoded = r.json()
-    return {result['symbol']: result['id'] for result in decoded if result}
+    return (gene_symbol, decoded[0]['id']) if decoded else (gene_symbol, None)
 
 # Function to fetch transcript IDs for a given gene
 def fetch_transcripts(ensembl_ids):
@@ -54,10 +53,19 @@ def main():
         gene_symbols = [symbol.strip() for symbol in gene_symbols_input.replace('\t', ',').split(',')]
 
         # Convert HGNC symbols to Ensembl IDs
-        ensembl_ids = symbols_to_ids(gene_symbols)
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            future_to_symbol = {executor.submit(symbol_to_id, gene_symbol): gene_symbol for gene_symbol in gene_symbols}
+            ensembl_ids = {}
+            for future in concurrent.futures.as_completed(future_to_symbol):
+                gene_symbol = future_to_symbol[future]
+                try:
+                    symbol, ensembl_id = future.result()
+                    ensembl_ids[symbol] = ensembl_id
+                except Exception as e:
+                    st.error(f'Failed to fetch Ensembl ID for {gene_symbol}: {e}')
 
         # Fetch transcript IDs for each gene
-        transcripts = fetch_transcripts(list(ensembl_ids.values()))
+        transcripts = fetch_transcripts([ensembl_id for ensembl_id in ensembl_ids.values() if ensembl_id])
 
         # Fetch CDS for each gene
         cds_dict = {}
