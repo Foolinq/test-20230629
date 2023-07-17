@@ -36,14 +36,14 @@ def main():
     st.title('Fetch CDS Sequences')
 
     # Text input for gene symbols
-    gene_symbols_input = st.text_input('Enter gene symbols, separated by commas:', 'BRCA2, TP53, BRAF')
+    gene_symbols_input = st.text_input('Enter gene symbols, separated by commas or tabs:', 'BRCA2, TP53, BRAF')
 
     # Button to fetch CDS sequences
     fetch_button = st.button('Fetch CDS Sequences')
 
     if fetch_button:
         # Split input into list of gene symbols
-        gene_symbols = [symbol.strip() for symbol in gene_symbols_input.split(',')]
+        gene_symbols = [symbol.strip() for symbol in gene_symbols_input.replace('\t', ',').split(',')]
 
         # Fetch CDS for each gene
         cds_dict = {}
