@@ -28,13 +28,9 @@ class Transcription(Base):
 engine = create_engine('postgresql://xmybdbirwwaocp:d2a20d22a09e4948cda6b9688769effa0a9f0b0393c0af7ba95d04b07b5d6fff@ec2-52-205-45-222.compute-1.amazonaws.com:5432/d9addgatbiak5p')
 Session = sessionmaker(bind=engine)
 
-Base.metadata.create_all(engine)
-
-from sqlalchemy import Table, MetaData
-
-metadata = MetaData()
-
-if not Table('genes', metadata, autoload_with=engine).exists():
+# Create all tables if they don't exist
+metadata = MetaData(engine)
+if not metadata.has_table('genes'):
     Base.metadata.create_all(engine)
 
 
