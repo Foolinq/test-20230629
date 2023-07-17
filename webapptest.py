@@ -1,10 +1,20 @@
 import streamlit as st
 import requests
 
-# Function to fetch CDS for a given gene
-def fetch_cds(gene_symbol):
+# Function to convert HGNC symbol to Ensembl ID
+def symbol_to_id(gene_symbol):
     server = "https://rest.ensembl.org"
-    ext = f"/sequence/id/{gene_symbol}?content-type=text/x-fasta;type=cds"
+    ext = f"/xrefs/symbol/homo_sapiens/{gene_symbol}?content-type=application/json"
+    r = requests.get(server+ext, headers={ "Content-Type" : "application/json"})
+    if not r.ok:
+        r.raise_for_status()
+    decoded = r.json()
+    return decoded[0]['id'] if decoded else None
+
+# Function to fetch CDS for a given gene
+def fetch_cds(ensembl_id):
+    server = "https://rest.ensembl.org"
+    ext = f"/sequence/id/{ensembl_id}?content-type=text/x-fasta;type=cds"
     r = requests.get(server+ext, headers={ "Content-Type" : "text/x-fasta"})
     if not r.ok:
         r.raise_for_status()
@@ -29,8 +39,12 @@ def main():
         cds_dict = {}
         for gene_symbol in gene_symbols:
             try:
-                cds = fetch_cds(gene_symbol)
-                cds_dict[gene_symbol] = cds
+                ensembl_id = symbol_to_id(gene_symbol)
+                if ensembl_id:
+                    cds = fetch_cds(ensembl_id)
+                    cds_dict[gene_symbol] = cds
+                else:
+                    st.error(f'Failed to find Ensembl ID for {gene_symbol}')
             except Exception as e:
                 st.error(f'Failed to fetch CDS for {gene_symbol}: {e}')
 
