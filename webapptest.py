@@ -26,7 +26,7 @@ class Transcription(Base):
     gene = relationship('Gene', back_populates='transcriptions')
 
 # Set up the database
-engine = create_engine('postgresql://user:password@localhost/dbname')
+engine = create_engine('postgres://xmybdbirwwaocp:d2a20d22a09e4948cda6b9688769effa0a9f0b0393c0af7ba95d04b07b5d6fff@ec2-52-205-45-222.compute-1.amazonaws.com:5432/d9addgatbiak5p')
 Session = sessionmaker(bind=engine)
 
 # Create all tables if they don't exist
