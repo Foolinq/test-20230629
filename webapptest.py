@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, String, ForeignKey
+from sqlalchemy import create_engine, Column, String, ForeignKey, MetaData
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.ext.declarative import declarative_base
 import pandas as pd
@@ -6,6 +6,7 @@ import streamlit as st
 import requests
 import concurrent.futures
 import time
+
 
 # Define the SQLAlchemy models
 Base = declarative_base()
