@@ -1,12 +1,12 @@
-from sqlalchemy import create_engine, Column, String, ForeignKey, MetaData
-from sqlalchemy.orm import sessionmaker, relationship
-from sqlalchemy.ext.declarative import declarative_base
 import pandas as pd
 import streamlit as st
 import requests
 import concurrent.futures
 import time
 
+from sqlalchemy import create_engine, Column, String, ForeignKey, MetaData
+from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy.ext.declarative import declarative_base
 
 # Define the SQLAlchemy models
 Base = declarative_base()
@@ -26,12 +26,13 @@ class Transcription(Base):
     gene = relationship('Gene', back_populates='transcriptions')
 
 # Set up the database
-engine = create_engine('postgresql://xmybdbirwwaocp:d2a20d22a09e4948cda6b9688769effa0a9f0b0393c0af7ba95d04b07b5d6fff@ec2-52-205-45-222.compute-1.amazonaws.com:5432/d9addgatbiak5p')
+engine = create_engine('postgresql://user:password@localhost/dbname')
 Session = sessionmaker(bind=engine)
 
 # Create all tables if they don't exist
-metadata = MetaData(engine)
-if not metadata.has_table('genes'):
+metadata = MetaData()
+metadata.reflect(bind=engine)
+if 'genes' not in metadata.tables:
     Base.metadata.create_all(engine)
 
 
