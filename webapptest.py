@@ -107,8 +107,8 @@ def count_codons(gene_symbols, debug_mode):
             if debug_mode:
                 st.write(f"Error processing gene symbol {gene_symbol}: {str(e)}")
 
-        # Wait for 0.2 seconds to respect the rate limit of 10 requests per second
-        time.sleep(0.2)
+        # Wait for 0.1 seconds to respect the rate limit of 10 requests per second
+        time.sleep(0.1)
 
     return codon_counts, amino_acid_counts
 
@@ -247,8 +247,8 @@ def clean_genes_in_excel(input_filepath, output_filepath, email, api_key, debug_
             if debug_mode:
                 st.write(f"Error processing gene symbol {gene_symbol}: {str(e)}")
 
-        # Wait for 0.2 seconds to respect the rate limit of 10 requests per second
-        time.sleep(0.2)
+        # Wait for 0.1 seconds to respect the rate limit of 10 requests per second
+        time.sleep(0.1)
 
     # Keep only the columns for valid genes
     df_clean = df[valid_genes]
