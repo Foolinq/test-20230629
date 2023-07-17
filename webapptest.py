@@ -29,53 +29,60 @@ amino_acid_names = {
     '*': 'Stop codon'
 }
 
-import requests
+def get_gene_id(gene_symbol, email, api_key):
+    Entrez.email = email
+    Entrez.api_key = api_key
 
-def get_gene_id(gene_symbol):
-    server = "https://rest.ensembl.org"
-    ext = f"/xrefs/symbol/homo_sapiens/{gene_symbol}?content-type=application/json"
-    r = requests.get(server + ext, headers={"Content-Type": "application/json"})
+    # Search for the gene symbol in the "nucleotide" database
+    handle = Entrez.esearch(db="nucleotide", term=f"{gene_symbol}[Gene] AND Homo sapiens[Organism] AND refseq[Filter]")
+    record = Entrez.read(handle)
+    handle.close()
 
-    if not r.ok:
-        r.raise_for_status()
-        return None
-
-    decoded = r.json()
     try:
-        return decoded[0]['id']
-    except (IndexError, KeyError):
+        # Return the first ID
+        return record["IdList"][0]
+    except IndexError:
+        # Return None if no ID was found
         return None
 
 
-def count_codons(gene_symbols, debug_mode):
-    server = "https://rest.ensembl.org"
+def count_codons(gene_symbols, email, api_key, debug_mode):
+    Entrez.email = email
+    Entrez.api_key = api_key
     codon_counts = {}
     amino_acid_counts = {}
 
     for gene_symbol in gene_symbols:
         try:
-            gene_id = get_gene_id(gene_symbol)
+            gene_id = get_gene_id(gene_symbol, "Homo sapiens", api_key)
 
-            ext = f"/overlap/id/{gene_id}?feature=cds;content-type=application/json"
-            r = requests.get(server + ext, headers={"Content-Type": "application/json"})
+            handle = Entrez.efetch(db="nucleotide", id=gene_id, rettype="gb", retmode="text")
+            record = SeqIO.read(handle, "genbank")
+            handle.close()
 
-            if not r.ok:
-                r.raise_for_status()
-                sys.exit()
-
-            decoded = r.json()
-
+            # Check if there's a CDS feature in the record
+            cds_found = False
+            for feature in record.features:
+                if feature.type == "CDS":
+                    cds_found = True
+                    break
+            
+            if not cds_found:
+                raise ValueError(f"No CDS feature found for gene ID {gene_id}")
+            
+            
             # initialize counters for this gene
             codon_count = Counter()
             amino_acid_count = Counter()
 
             # find the CDS feature
             cds_count = 0
-            for feature in decoded:
-                if feature['feature_type'] == "cds":
+            for feature in record.features:
+                if feature.type == "CDS":
                     cds_count += 1
                     # extract the CDS sequence
-                    sequence = feature['seq']
+                    sequence = str(feature.extract(record.seq))
+
                     if debug_mode:
                         st.write(f"CDS {cds_count} for gene ID {gene_id}: {sequence}")  # output the CDS
 
@@ -107,8 +114,8 @@ def count_codons(gene_symbols, debug_mode):
             if debug_mode:
                 st.write(f"Error processing gene symbol {gene_symbol}: {str(e)}")
 
-        # Wait for 0.1 seconds to respect the rate limit of 10 requests per second
-        time.sleep(0.1)
+        # Wait for 0.2 seconds to respect the rate limit of 10 requests per second
+        time.sleep(0.2)
 
     return codon_counts, amino_acid_counts
 
@@ -187,7 +194,7 @@ def get_gene_symbols():
 
 def process_gene_symbols(gene_symbols, debug_mode):
     gene_symbols_list = [gene_symbol.strip() for gene_symbol in gene_symbols.split(',')]
-    codon_counts, amino_acid_counts = count_codons(gene_symbols_list, debug_mode)
+    codon_counts, amino_acid_counts = count_codons(gene_symbols_list, "parentrdavid@gmail.com", os.getenv('NCBI_API_KEY'), debug_mode)
 
     # Convert dictionaries to pandas DataFrames
     codon_df = pd.DataFrame.from_dict(codon_counts, orient='index').transpose()
@@ -247,8 +254,8 @@ def clean_genes_in_excel(input_filepath, output_filepath, email, api_key, debug_
             if debug_mode:
                 st.write(f"Error processing gene symbol {gene_symbol}: {str(e)}")
 
-        # Wait for 0.1 seconds to respect the rate limit of 10 requests per second
-        time.sleep(0.1)
+        # Wait for 0.2 seconds to respect the rate limit of 10 requests per second
+        time.sleep(0.2)
 
     # Keep only the columns for valid genes
     df_clean = df[valid_genes]
