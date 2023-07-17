@@ -187,7 +187,7 @@ def get_gene_symbols():
 
 def process_gene_symbols(gene_symbols, debug_mode):
     gene_symbols_list = [gene_symbol.strip() for gene_symbol in gene_symbols.split(',')]
-    codon_counts, amino_acid_counts = count_codons(gene_symbols_list, "parentrdavid@gmail.com", os.getenv('NCBI_API_KEY'), debug_mode)
+    codon_counts, amino_acid_counts = count_codons(gene_symbols_list, debug_mode)
 
     # Convert dictionaries to pandas DataFrames
     codon_df = pd.DataFrame.from_dict(codon_counts, orient='index').transpose()
