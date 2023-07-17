@@ -47,26 +47,33 @@ def main():
 
         # Fetch CDS for each gene
         cds_dict = {}
+        single_cds_dict = {}
         for gene_symbol in gene_symbols:
             try:
                 ensembl_id = symbol_to_id(gene_symbol)
                 if ensembl_id:
                     transcript_ids = fetch_transcripts(ensembl_id)
+                    cds_count = 0
                     for transcript_id in transcript_ids:
                         try:
                             cds = fetch_cds(transcript_id)
                             if cds:
                                 cds_dict[gene_symbol] = cds
-                                break  # Stop after finding the first CDS
+                                cds_count += 1
+                                if cds_count > 1:
+                                    break  # Stop after finding more than one CDS
                         except Exception as e:
                             st.error(f'Failed to fetch CDS for {gene_symbol} transcript {transcript_id}: {e}')
+                    if cds_count == 1:
+                        single_cds_dict[gene_symbol] = cds_dict[gene_symbol]
                 else:
                     st.error(f'Failed to find Ensembl ID for {gene_symbol}')
             except Exception as e:
                 st.error(f'Failed to fetch CDS for {gene_symbol}: {e}')
 
-        # Display CDS dictionary
-        st.write(cds_dict)
+        # Display CDS dictionaries
+        st.write('All genes with at least one CDS:', cds_dict)
+        st.write('Genes with exactly one CDS:', single_cds_dict)
 
 if __name__ == "__main__":
     main()
