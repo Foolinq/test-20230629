@@ -5,3 +5,4 @@ biopython
 openpyxl
 pandas
 xlrd
+psycopg2-binary
