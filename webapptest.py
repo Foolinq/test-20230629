@@ -1,25 +1,29 @@
 import streamlit as st
 import requests
+import concurrent.futures
+import time
 
-# Function to convert HGNC symbol to Ensembl ID
-def symbol_to_id(gene_symbol):
+# Function to convert HGNC symbols to Ensembl IDs
+def symbols_to_ids(gene_symbols):
     server = "https://rest.ensembl.org"
-    ext = f"/xrefs/symbol/homo_sapiens/{gene_symbol}?content-type=application/json"
-    r = requests.get(server+ext, headers={ "Content-Type" : "application/json"})
+    ext = "/xrefs/symbol/homo_sapiens/?content-type=application/json"
+    data = {"symbols": gene_symbols}
+    r = requests.post(server+ext, headers={ "Content-Type" : "application/json"}, json=data)
     if not r.ok:
         r.raise_for_status()
     decoded = r.json()
-    return decoded[0]['id'] if decoded else None
+    return {result['symbol']: result['id'] for result in decoded if result}
 
 # Function to fetch transcript IDs for a given gene
-def fetch_transcripts(ensembl_id):
+def fetch_transcripts(ensembl_ids):
     server = "https://rest.ensembl.org"
-    ext = f"/lookup/id/{ensembl_id}?content-type=application/json;expand=1"
-    r = requests.get(server+ext, headers={ "Content-Type" : "application/json"})
+    ext = "/lookup/id/?content-type=application/json;expand=1"
+    data = {"ids": ensembl_ids}
+    r = requests.post(server+ext, headers={ "Content-Type" : "application/json"}, json=data)
     if not r.ok:
         r.raise_for_status()
     decoded = r.json()
-    return [transcript['id'] for transcript in decoded['Transcript']]
+    return {ensembl_id: [transcript['id'] for transcript in result['Transcript']] for ensembl_id, result in decoded.items() if 'Transcript' in result}
 
 # Function to fetch CDS for a given transcript
 def fetch_cds(transcript_id):
@@ -27,6 +31,10 @@ def fetch_cds(transcript_id):
     ext = f"/sequence/id/{transcript_id}?content-type=text/x-fasta;type=cds"
     r = requests.get(server+ext, headers={ "Content-Type" : "text/x-fasta"})
     if not r.ok:
+        if r.status_code == 429 and 'Retry-After' in r.headers:
+            retry_after = int(r.headers['Retry-After'])
+            time.sleep(retry_after)
+            return fetch_cds(transcript_id)
         return None
     seq = "".join(r.text.split("\n")[1:])  # Remove the fasta header
     return seq
@@ -45,31 +53,39 @@ def main():
         # Split input into list of gene symbols
         gene_symbols = [symbol.strip() for symbol in gene_symbols_input.replace('\t', ',').split(',')]
 
+        # Convert HGNC symbols to Ensembl IDs
+        ensembl_ids = symbols_to_ids(gene_symbols)
+
+        # Fetch transcript IDs for each gene
+        transcripts = fetch_transcripts(list(ensembl_ids.values()))
+
         # Fetch CDS for each gene
         cds_dict = {}
         single_cds_dict = {}
-        for gene_symbol in gene_symbols:
-            try:
-                ensembl_id = symbol_to_id(gene_symbol)
-                if ensembl_id:
-                    transcript_ids = fetch_transcripts(ensembl_id)
-                    cds_count = 0
-                    for transcript_id in transcript_ids:
-                        try:
-                            cds = fetch_cds(transcript_id)
-                            if cds:
-                                cds_dict[gene_symbol] = cds
-                                cds_count += 1
-                                if cds_count > 1:
-                                    break  # Stop after finding more than one CDS
-                        except Exception as e:
-                            st.error(f'Failed to fetch CDS for {gene_symbol} transcript {transcript_id}: {e}')
-                    if cds_count == 1:
-                        single_cds_dict[gene_symbol] = cds_dict[gene_symbol]
-                else:
-                    st.error(f'Failed to find Ensembl ID for {gene_symbol}')
-            except Exception as e:
-                st.error(f'Failed to fetch CDS for {gene_symbol}: {e}')
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            for gene_symbol, ensembl_id in ensembl_ids.items():
+                try:
+                    if ensembl_id in transcripts:
+                        transcript_ids = transcripts[ensembl_id]
+                        cds_count = 0
+                        future_to_cds = {executor.submit(fetch_cds, transcript_id): transcript_id for transcript_id in transcript_ids}
+                        for future in concurrent.futures.as_completed(future_to_cds):
+                            transcript_id = future_to_cds[future]
+                            try:
+                                cds = future.result()
+                                if cds:
+                                    cds_dict[gene_symbol] = cds
+                                    cds_count += 1
+                                    if cds_count > 1:
+                                        break  # Stop after finding more than one CDS
+                            except Exception as e:
+                                st.error(f'Failed to fetch CDS for {gene_symbol} transcript {transcript_id}: {e}')
+                        if cds_count == 1:
+                            single_cds_dict[gene_symbol] = cds_dict[gene_symbol]
+                    else:
+                        st.error(f'Failed to find Ensembl ID for {gene_symbol}')
+                except Exception as e:
+                    st.error(f'Failed to fetch CDS for {gene_symbol}: {e}')
 
         # Display CDS dictionaries
         st.write('All genes with at least one CDS:', cds_dict)
