@@ -27,7 +27,7 @@ def fetch_cds(transcript_id):
     ext = f"/sequence/id/{transcript_id}?content-type=text/x-fasta;type=cds"
     r = requests.get(server+ext, headers={ "Content-Type" : "text/x-fasta"})
     if not r.ok:
-        r.raise_for_status()
+        return None
     seq = "".join(r.text.split("\n")[1:])  # Remove the fasta header
     return seq
 
@@ -55,7 +55,9 @@ def main():
                     for transcript_id in transcript_ids:
                         try:
                             cds = fetch_cds(transcript_id)
-                            cds_dict[f'{gene_symbol}_{transcript_id}'] = cds
+                            if cds:
+                                cds_dict[gene_symbol] = cds
+                                break  # Stop after finding the first CDS
                         except Exception as e:
                             st.error(f'Failed to fetch CDS for {gene_symbol} transcript {transcript_id}: {e}')
                 else:
