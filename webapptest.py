@@ -33,16 +33,16 @@ def get_gene_id(gene_symbol, email, api_key):
     Entrez.email = email
     Entrez.api_key = api_key
 
-    # Search for the gene symbol in the "gene" database
-    handle = Entrez.esearch(db="gene", term=f"{gene_symbol}[Gene] AND Homo sapiens[Organism]")
+    # Search for the gene symbol in the "nucleotide" database
+    handle = Entrez.esearch(db="nucleotide", term=f"{gene_symbol}[Gene] AND Homo sapiens[Organism] AND refseq[Filter]")
     record = Entrez.read(handle)
     handle.close()
 
     try:
-        # Return the first Gene ID
+        # Return the first ID
         return record["IdList"][0]
     except IndexError:
-        # Return None if no Gene ID was found
+        # Return None if no ID was found
         return None
 
 
