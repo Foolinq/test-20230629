@@ -11,10 +11,20 @@ def symbol_to_id(gene_symbol):
     decoded = r.json()
     return decoded[0]['id'] if decoded else None
 
-# Function to fetch CDS for a given gene
-def fetch_cds(ensembl_id):
+# Function to fetch transcript IDs for a given gene
+def fetch_transcripts(ensembl_id):
     server = "https://rest.ensembl.org"
-    ext = f"/sequence/id/{ensembl_id}?content-type=text/x-fasta;type=cds"
+    ext = f"/lookup/id/{ensembl_id}?content-type=application/json;expand=1"
+    r = requests.get(server+ext, headers={ "Content-Type" : "application/json"})
+    if not r.ok:
+        r.raise_for_status()
+    decoded = r.json()
+    return [transcript['id'] for transcript in decoded['Transcript']]
+
+# Function to fetch CDS for a given transcript
+def fetch_cds(transcript_id):
+    server = "https://rest.ensembl.org"
+    ext = f"/sequence/id/{transcript_id}?content-type=text/x-fasta;type=cds"
     r = requests.get(server+ext, headers={ "Content-Type" : "text/x-fasta"})
     if not r.ok:
         r.raise_for_status()
@@ -41,8 +51,13 @@ def main():
             try:
                 ensembl_id = symbol_to_id(gene_symbol)
                 if ensembl_id:
-                    cds = fetch_cds(ensembl_id)
-                    cds_dict[gene_symbol] = cds
+                    transcript_ids = fetch_transcripts(ensembl_id)
+                    for transcript_id in transcript_ids:
+                        try:
+                            cds = fetch_cds(transcript_id)
+                            cds_dict[f'{gene_symbol}_{transcript_id}'] = cds
+                        except Exception as e:
+                            st.error(f'Failed to fetch CDS for {gene_symbol} transcript {transcript_id}: {e}')
                 else:
                     st.error(f'Failed to find Ensembl ID for {gene_symbol}')
             except Exception as e:
