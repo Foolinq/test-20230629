@@ -138,7 +138,7 @@ def main():
                     # Wait for all futures in the block to complete before proceeding
                     concurrent.futures.wait(futures)
                     # Update the progress bar
-                    progress_bar.progress((i + 25) / len(gene_symbols))
+                    progress_bar.progress((i + 25) / len(gene_symbols) if i + 25 < len(gene_symbols) else 1.0)
 
         else:
             st.error('Please upload an Excel file.')
