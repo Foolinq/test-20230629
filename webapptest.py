@@ -145,6 +145,7 @@ def main():
 
 # The process_gene function
 def process_gene(gene_symbol):
+    global debug
     try:
         # Convert HGNC symbol to Ensembl ID
         symbol, ensembl_id = symbol_to_id(gene_symbol)
