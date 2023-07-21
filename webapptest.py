@@ -102,7 +102,7 @@ def main():
     st.title('Fetch CDS Sequences')
 
     # File uploader for Excel file
-    file = st.file_uploader('Upload an Excel file:', type=['xlsx'])
+    file = st.file_uploader('Upload an Excel file:', type=['xlsx'], key='unique')
 
     # Button to fetch CDS sequences
     fetch_button = st.button('Fetch CDS Sequences')
