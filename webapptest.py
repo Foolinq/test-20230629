@@ -18,7 +18,7 @@ class Gene(Base):
     sequence = Column(String)
 
 # Set up the database
-engine = create_engine('postgresql://xmybdbirwwaocp:d2a20d22a09e4948cda6b9688769effa0a9f0b0393c0af7ba95d04b07b5d6fff@ec2-52-205-45-222.compute-1.amazonaws.com:5432/d9addgatbiak5p')
+engine = create_engine('postgres://jqczrvezvwlzer:5980122424475b4fcdc2e539dbb0667d254452a21cd3cc633f9a64a8796da2df@ec2-3-212-70-5.compute-1.amazonaws.com:5432/d202roftknash2')
 Session = sessionmaker(bind=engine)
 
 def setup_tables():
