@@ -177,7 +177,6 @@ def main():
         else:
             st.error('Please upload an Excel file.')
 
-# The process_gene function
 def process_gene(gene_symbol):
     session = Session()
     try:
@@ -189,23 +188,33 @@ def process_gene(gene_symbol):
             # Convert HGNC symbol to Ensembl ID
             symbol, ensembl_id = symbol_to_id(gene_symbol)
 
-            # Fetch transcript IDs for the gene
-            transcripts = fetch_transcripts([ensembl_id])
+            if ensembl_id:  # The API request was successful
+                # Fetch transcript IDs for the gene
+                transcripts = fetch_transcripts([ensembl_id])
 
-            if ensembl_id in transcripts:
-                transcript_ids = transcripts[ensembl_id]
-                if len(transcript_ids) == 1:  # Only fetch sequence for genes with one transcription
-                    transcript_id = transcript_ids[0]
-                    cds = fetch_cds(transcript_id)
-                    if cds:
-                        add_gene_and_sequence(symbol, cds)
-                else:
+                if ensembl_id in transcripts:
+                    transcript_ids = transcripts[ensembl_id]
+                    if len(transcript_ids) == 1:  # Only fetch sequence for genes with one transcription
+                        transcript_id = transcript_ids[0]
+                        cds = fetch_cds(transcript_id)
+                        if cds:
+                            add_gene_and_sequence(symbol, cds)
+                        else:  # The fetch_cds function returned None, so the gene is invalid
+                            add_invalid_gene(symbol)
+                    else:  # There are multiple transcriptions, so the gene is invalid
+                        add_invalid_gene(symbol)
+                else:  # The fetch_transcripts function didn't find any transcriptions, so the gene is invalid
                     add_invalid_gene(symbol)
-            else:
+            else:  # The symbol_to_id function returned None, so the gene is invalid
                 add_invalid_gene(symbol)
     except Exception as e:
         st.error(f'Failed to process {gene_symbol}: {e}')
     finally:
+        # If the gene isn't in the valid or invalid tables, add it to the invalid genes table
+        gene = session.query(Gene).filter_by(name=gene_symbol).first()
+        invalid_gene = session.query(InvalidGene).filter_by(name=gene_symbol).first()
+        if gene is None and invalid_gene is None:
+            add_invalid_gene(gene_symbol)
         session.close()
 
 if __name__ == "__main__":
