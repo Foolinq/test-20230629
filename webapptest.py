@@ -145,7 +145,7 @@ def main():
 
 # The process_gene function
 def process_gene(gene_symbol):
-    global debug
+    global debug  # Use the global debug variable inside the function
     try:
         # Convert HGNC symbol to Ensembl ID
         symbol, ensembl_id = symbol_to_id(gene_symbol)
@@ -160,10 +160,12 @@ def process_gene(gene_symbol):
                 cds = fetch_cds(transcript_id)
                 if cds:
                     add_gene_and_sequence(symbol, cds)
+                    if debug:
+                        st.text(f"Gene {symbol} - Successfully added to the database.")
             elif debug:
-                st.write(f"{symbol} - Not added, multiple CDS found.")
+                st.text(f"{symbol} - Not added, multiple CDS found.")
         elif debug:
-            st.write(f"{symbol} - Not added, no CDS found.")
+            st.text(f"{symbol} - Not added, no CDS found.")
     except Exception as e:
         st.error(f'Failed to process {gene_symbol}: {e}')
 
