@@ -102,7 +102,7 @@ def main():
     st.title('Fetch CDS Sequences')
 
     # File uploader for Excel file
-    file = st.file_uploader('Upload an Excel file:', type=['xlsx'], key='unique')
+    file = st.file_uploader('Upload an Excel file:', type=['xlsx'])
 
     # Button to fetch CDS sequences
     fetch_button = st.button('Fetch CDS Sequences')
@@ -149,5 +149,3 @@ def main():
 if __name__ == "__main__":
     main()
 
-if __name__ == "__main__":
-    main()
