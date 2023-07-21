@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey
+from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -8,14 +8,11 @@ engine = create_engine(DATABASE_URI)
 Session = sessionmaker(bind=engine)
 Base = declarative_base()
 
-# Define the Gene class
 class Gene(Base):
     __tablename__ = 'genes'
 
-    id = Column(Integer, primary_key=True)
-    name = Column(String)
+    name = Column(String, primary_key=True)
     sequence = Column(String)
-    expression = Column(Integer)
 
 class Codon(Base):
     __tablename__ = 'codons'
@@ -24,6 +21,8 @@ class Codon(Base):
     gene_name = Column(String, ForeignKey('genes.name'))
     codon = Column(String)
     amino_acid = Column(String)
+    __table_args__ = (UniqueConstraint('gene_name', 'codon', name='uc_gene_codon'), )
+
 
 # Define the genetic code
 GENETIC_CODE = {
