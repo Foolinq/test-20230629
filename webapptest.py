@@ -4,8 +4,8 @@ import requests
 import concurrent.futures
 import time
 
-from sqlalchemy import create_engine, Column, String, ForeignKey
-from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy import create_engine, Column, String
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
 # Define the SQLAlchemy models
@@ -17,9 +17,61 @@ class Gene(Base):
     name = Column(String, primary_key=True)
     sequence = Column(String)
 
+class InvalidGene(Base):
+    __tablename__ = 'invalid_genes'
+
+    name = Column(String, primary_key=True)
+
 # Set up the database
 engine = create_engine('postgresql://jqczrvezvwlzer:5980122424475b4fcdc2e539dbb0667d254452a21cd3cc633f9a64a8796da2df@ec2-3-212-70-5.compute-1.amazonaws.com:5432/d202roftknash2')
 Session = sessionmaker(bind=engine)
+
+def setup_tables():
+    Base.metadata.create_all(engine)
+
+def add_gene_and_sequence(gene_name, sequence):
+    # Start a new session
+    session = Session()
+
+    try:
+        # Create a new gene with its sequence
+        gene = Gene(name=gene_name, sequence=sequence)
+
+        # Add the gene to the session
+        session.add(gene)
+
+        # Commit the session to save the changes to the database
+        session.commit()
+
+    except:
+        # If an error occurs, roll back the session
+        session.rollback()
+        raise
+    finally:
+        # Always close the session when you're done with it
+        session.close()
+
+def add_invalid_gene(gene_name):
+    # Start a new session
+    session = Session()
+
+    try:
+        # Create a new invalid gene
+        invalid_gene = InvalidGene(name=gene_name)
+
+        # Add the invalid gene to the session
+        session.add(invalid_gene)
+
+        # Commit the session to save the changes to the database
+        session.commit()
+
+    except:
+        # If an error occurs, roll back the session
+        session.rollback()
+        raise
+    finally:
+        # Always close the session when you're done with it
+        session.close()
 
 def setup_tables():
     Base.metadata.create_all(engine)
@@ -127,22 +179,34 @@ def main():
 
 # The process_gene function
 def process_gene(gene_symbol):
+    session = Session()
     try:
-        # Convert HGNC symbol to Ensembl ID
-        symbol, ensembl_id = symbol_to_id(gene_symbol)
+        # Check if the gene is already in the valid or invalid tables
+        gene = session.query(Gene).filter_by(name=gene_symbol).first()
+        invalid_gene = session.query(InvalidGene).filter_by(name=gene_symbol).first()
 
-        # Fetch transcript IDs for the gene
-        transcripts = fetch_transcripts([ensembl_id])
+        if gene is None and invalid_gene is None:
+            # Convert HGNC symbol to Ensembl ID
+            symbol, ensembl_id = symbol_to_id(gene_symbol)
 
-        if ensembl_id in transcripts:
-            transcript_ids = transcripts[ensembl_id]
-            if len(transcript_ids) == 1:  # Only fetch sequence for genes with one transcription
-                transcript_id = transcript_ids[0]
-                cds = fetch_cds(transcript_id)
-                if cds:
-                    add_gene_and_sequence(symbol, cds)
+            # Fetch transcript IDs for the gene
+            transcripts = fetch_transcripts([ensembl_id])
+
+            if ensembl_id in transcripts:
+                transcript_ids = transcripts[ensembl_id]
+                if len(transcript_ids) == 1:  # Only fetch sequence for genes with one transcription
+                    transcript_id = transcript_ids[0]
+                    cds = fetch_cds(transcript_id)
+                    if cds:
+                        add_gene_and_sequence(symbol, cds)
+                else:
+                    add_invalid_gene(symbol)
+            else:
+                add_invalid_gene(symbol)
     except Exception as e:
         st.error(f'Failed to process {gene_symbol}: {e}')
+    finally:
+        session.close()
 
 if __name__ == "__main__":
     main()
