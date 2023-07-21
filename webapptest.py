@@ -131,20 +131,23 @@ def main():
             transcripts = fetch_transcripts([ensembl_id for ensembl_id in ensembl_ids.values() if ensembl_id])
 
             # Fetch CDS for each gene
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            for gene_symbol, ensembl_id in ensembl_ids.items():
-                try:
-                    if ensembl_id in transcripts:
-                        transcript_ids = transcripts[ensembl_id]
-                        if len(transcript_ids) == 1:  # Only fetch sequence for genes with one transcription
-                            transcript_id = transcript_ids[0]
-                            cds = executor.submit(fetch_cds, transcript_id).result()
-                            if cds:
-                                add_gene_and_sequence(gene_symbol, cds)
-                except Exception as e:
-                    st.error(f'Failed to fetch CDS for {gene_symbol}: {e}')
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                for gene_symbol, ensembl_id in ensembl_ids.items():
+                    try:
+                        if ensembl_id in transcripts:
+                            transcript_ids = transcripts[ensembl_id]
+                            if len(transcript_ids) == 1:  # Only fetch sequence for genes with one transcription
+                                transcript_id = transcript_ids[0]
+                                cds = executor.submit(fetch_cds, transcript_id).result()
+                                if cds:
+                                    add_gene_and_sequence(gene_symbol, cds)
+                    except Exception as e:
+                        st.error(f'Failed to fetch CDS for {gene_symbol}: {e}')
         else:
             st.error('Please upload an Excel file.')
+
+if __name__ == "__main__":
+    main()
 
 if __name__ == "__main__":
     main()
