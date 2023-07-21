@@ -1,6 +1,7 @@
 from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
+from collections import Counter
 
 # Define the database
 DATABASE_URI = 'postgresql://jqczrvezvwlzer:5980122424475b4fcdc2e539dbb0667d254452a21cd3cc633f9a64a8796da2df@ec2-3-212-70-5.compute-1.amazonaws.com:5432/d202roftknash2'
@@ -21,8 +22,8 @@ class Codon(Base):
     gene_name = Column(String, ForeignKey('genes.name'))
     codon = Column(String)
     amino_acid = Column(String)
+    count = Column(Integer)
     __table_args__ = (UniqueConstraint('gene_name', 'codon', name='uc_gene_codon'), )
-
 
 # Define the genetic code
 GENETIC_CODE = {
@@ -47,11 +48,11 @@ GENETIC_CODE = {
 def setup_tables():
     Base.metadata.create_all(engine)
 
-def add_codon(gene_name, codon, amino_acid):
+def add_codon(gene_name, codon, amino_acid, count):
     session = Session()
 
     try:
-        new_codon = Codon(gene_name=gene_name, codon=codon, amino_acid=amino_acid)
+        new_codon = Codon(gene_name=gene_name, codon=codon, amino_acid=amino_acid, count=count)
         session.add(new_codon)
         session.commit()
     except:
@@ -69,12 +70,14 @@ def process_gene_codons(gene_name):
         sequence = gene.sequence
         codons = [sequence[i:i+3] for i in range(0, len(sequence), 3)]
 
-        for codon in codons:
+        codon_counter = Counter(codons)
+
+        for codon, count in codon_counter.items():
             if len(codon) != 3:
                 continue
 
             amino_acid = GENETIC_CODE.get(codon, 'X')
-            add_codon(gene_name, codon, amino_acid)
+            add_codon(gene_name, codon, amino_acid, count)
     except Exception as e:
         print(f'Failed to process {gene_name}: {e}')
     finally:
@@ -82,7 +85,7 @@ def process_gene_codons(gene_name):
 
 if __name__ == "__main__":
     setup_tables()
-    
+
     # Query all the genes from your database
     session = Session()
     gene_names = [gene.name for gene in session.query(Gene).all()]
@@ -92,4 +95,4 @@ if __name__ == "__main__":
     for gene_name in gene_names:
         process_gene_codons(gene_name)
 
-    st.write("Done!")
+    print("Done!")
