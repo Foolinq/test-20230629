@@ -119,6 +119,9 @@ def main():
     # Button to fetch CDS sequences
     fetch_button = st.button('Fetch CDS Sequences')
 
+    # Create a progress bar
+    progress_bar = st.progress(0)
+
     if fetch_button:
         if file is not None:
             # Read the Excel file into a DataFrame
@@ -157,6 +160,11 @@ def main():
                                     st.write(f"Gene {i+1} of {len(ensembl_ids)}: {gene_symbol} - Not added, no CDS found.")
                             elif debug:
                                 st.write(f"Gene {i+1} of {len(ensembl_ids)}: {gene_symbol} - Not added, multiple CDS found.")
+                        
+                        # Update progress every 10 genes
+                        if (i+1) % 10 == 0 or i+1 == len(ensembl_ids):
+                            progress = (i+1) / len(ensembl_ids)
+                            progress_bar.progress(progress)
                     except Exception as e:
                         st.error(f'Failed to fetch CDS for {gene_symbol}: {e}')
         else:
