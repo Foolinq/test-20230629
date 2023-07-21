@@ -18,15 +18,16 @@ class Gene(Base):
     sequence = Column(String)
 
 # Set up the database
-engine = create_engine('postgresql://jqczrvezvwlzer:5980122424475b4fcdc2e539dbb0667d254452a21cd3cc633f9a64a8796da2df@ec2-3-212-70-5.compute-1.amazonaws.com:5432/d202roftknash2')
+engine = create_engine('postgresql://xmybdbirwwaocp:d2a20d22a09e4948cda6b9688769effa0a9f0b0393c0af7ba95d04b07b5d6fff@ec2-52-205-45-222.compute-1.amazonaws.com:5432/d9addgatbiak5p')
 Session = sessionmaker(bind=engine)
 
 def setup_tables():
     Base.metadata.create_all(engine)
 
+# Global variable for debugging
+debug = False
 
-
-def add_gene_and_sequence(gene_name, sequence):
+def add_gene_and_sequence(gene_name, sequence, gene_number, total_genes):
     # Start a new session
     session = Session()
 
@@ -35,6 +36,8 @@ def add_gene_and_sequence(gene_name, sequence):
         gene = session.query(Gene).filter_by(name=gene_name).first()
         if gene is not None:
             # If the gene already exists, skip it
+            if debug:
+                st.write(f"Gene {gene_number} of {total_genes}: {gene_name} - Not added, already exists in the database.")
             return
 
         # Create a new gene with its sequence
@@ -45,6 +48,9 @@ def add_gene_and_sequence(gene_name, sequence):
 
         # Commit the session to save the changes to the database
         session.commit()
+
+        if debug:
+            st.write(f"Gene {gene_number} of {total_genes}: {gene_name} - Successfully added to the database.")
     except:
         # If an error occurs, roll back the session
         session.rollback()
@@ -96,13 +102,19 @@ import pandas as pd
 
 # Streamlit app
 def main():
+    global debug
+
     # Uncomment the line below when you need to setup the tables
     setup_tables()
-    
+
     st.title('Fetch CDS Sequences')
 
+    # Add debug button
+    debug_button = st.button('Turn on Debug')
+    debug = debug_button
+
     # File uploader for Excel file
-    file = st.file_uploader('Upload an Excel file:', type=['xlsx'])
+    file = st.file_uploader('Upload an Excel file:', type=['xlsx'], key="file_uploader")
 
     # Button to fetch CDS sequences
     fetch_button = st.button('Fetch CDS Sequences')
@@ -132,7 +144,7 @@ def main():
 
             # Fetch CDS for each gene
             with concurrent.futures.ThreadPoolExecutor() as executor:
-                for gene_symbol, ensembl_id in ensembl_ids.items():
+                for i, (gene_symbol, ensembl_id) in enumerate(ensembl_ids.items()):
                     try:
                         if ensembl_id in transcripts:
                             transcript_ids = transcripts[ensembl_id]
@@ -140,7 +152,11 @@ def main():
                                 transcript_id = transcript_ids[0]
                                 cds = executor.submit(fetch_cds, transcript_id).result()
                                 if cds:
-                                    add_gene_and_sequence(gene_symbol, cds)
+                                    add_gene_and_sequence(gene_symbol, cds, i+1, len(ensembl_ids))
+                                elif debug:
+                                    st.write(f"Gene {i+1} of {len(ensembl_ids)}: {gene_symbol} - Not added, no CDS found.")
+                            elif debug:
+                                st.write(f"Gene {i+1} of {len(ensembl_ids)}: {gene_symbol} - Not added, multiple CDS found.")
                     except Exception as e:
                         st.error(f'Failed to fetch CDS for {gene_symbol}: {e}')
         else:
@@ -148,4 +164,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
