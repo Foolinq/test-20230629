@@ -24,10 +24,7 @@ Session = sessionmaker(bind=engine)
 def setup_tables():
     Base.metadata.create_all(engine)
 
-# Global variable for debugging
-debug = False
-
-def add_gene_and_sequence(gene_name, sequence, gene_number, total_genes):
+def add_gene_and_sequence(gene_name, sequence):
     # Start a new session
     session = Session()
 
@@ -36,8 +33,6 @@ def add_gene_and_sequence(gene_name, sequence, gene_number, total_genes):
         gene = session.query(Gene).filter_by(name=gene_name).first()
         if gene is not None:
             # If the gene already exists, skip it
-            if debug:
-                st.write(f"Gene {gene_number} of {total_genes}: {gene_name} - Not added, already exists in the database.")
             return
 
         # Create a new gene with its sequence
@@ -49,8 +44,6 @@ def add_gene_and_sequence(gene_name, sequence, gene_number, total_genes):
         # Commit the session to save the changes to the database
         session.commit()
 
-        if debug:
-            st.write(f"Gene {gene_number} of {total_genes}: {gene_name} - Successfully added to the database.")
     except:
         # If an error occurs, roll back the session
         session.rollback()
@@ -58,10 +51,6 @@ def add_gene_and_sequence(gene_name, sequence, gene_number, total_genes):
     finally:
         # Always close the session when you're done with it
         session.close()
-
-
-
-
 
 # Function to convert HGNC symbol to Ensembl ID
 def symbol_to_id(gene_symbol):
@@ -102,16 +91,10 @@ import pandas as pd
 
 # Streamlit app
 def main():
-    global debug
-
     # Uncomment the line below when you need to setup the tables
     setup_tables()
 
     st.title('Fetch CDS Sequences')
-
-    # Add debug checkbox
-    debug_checkbox = st.checkbox('Enable Debugging')
-    debug = debug_checkbox
 
     # File uploader for Excel file
     file = st.file_uploader('Upload an Excel file:', type=['xlsx'], key="file_uploader")
@@ -139,13 +122,11 @@ def main():
                     concurrent.futures.wait(futures)
                     # Update the progress bar
                     progress_bar.progress((i + 25) / len(gene_symbols) if i + 25 < len(gene_symbols) else 1.0)
-
         else:
             st.error('Please upload an Excel file.')
 
 # The process_gene function
 def process_gene(gene_symbol):
-    global debug  # Use the global debug variable inside the function
     try:
         # Convert HGNC symbol to Ensembl ID
         symbol, ensembl_id = symbol_to_id(gene_symbol)
@@ -160,12 +141,6 @@ def process_gene(gene_symbol):
                 cds = fetch_cds(transcript_id)
                 if cds:
                     add_gene_and_sequence(symbol, cds)
-                    if debug:
-                        st.text(f"Gene {symbol} - Successfully added to the database.")
-            elif debug:
-                st.text(f"{symbol} - Not added, multiple CDS found.")
-        elif debug:
-            st.text(f"{symbol} - Not added, no CDS found.")
     except Exception as e:
         st.error(f'Failed to process {gene_symbol}: {e}')
 
