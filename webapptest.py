@@ -119,6 +119,9 @@ def main():
     # Button to fetch CDS sequences
     fetch_button = st.button('Fetch CDS Sequences')
 
+    # Progress bar
+    progress_bar = st.progress(0)
+
     if fetch_button:
         if file is not None:
             # Read the Excel file into a DataFrame
@@ -127,38 +130,41 @@ def main():
             # Get the gene symbols from the column headers
             gene_symbols = df.columns.tolist()
 
-            # Progress bar
-            progress_bar = st.progress(0)
-
-            # Convert HGNC symbols to Ensembl IDs
-            ensembl_ids = {}
-            for i, gene_symbol in enumerate(gene_symbols):
-                try:
-                    symbol, ensembl_id = symbol_to_id(gene_symbol)
-                    ensembl_ids[symbol] = ensembl_id
-                except Exception as e:
-                    st.error(f'Failed to fetch Ensembl ID for {gene_symbol}: {e}')
-
-                # Fetch transcript IDs for each gene
-                transcripts = fetch_transcripts([ensembl_id for ensembl_id in ensembl_ids.values() if ensembl_id])
-
-                if ensembl_id in transcripts:
-                    transcript_ids = transcripts[ensembl_id]
-                    if len(transcript_ids) == 1:  # Only fetch sequence for genes with one transcription
-                        transcript_id = transcript_ids[0]
-                        cds = fetch_cds(transcript_id)
-                        if cds:
-                            add_gene_and_sequence(gene_symbol, cds, i+1, len(ensembl_ids))
-                        elif debug:
-                            st.write(f"Gene {i+1} of {len(ensembl_ids)}: {gene_symbol} - Not added, no CDS found.")
-                    elif debug:
-                        st.write(f"Gene {i+1} of {len(ensembl_ids)}: {gene_symbol} - Not added, multiple CDS found.")
-
-                # Update the progress bar
-                progress_bar.progress((i+1) / len(gene_symbols))
+            # Create an executor
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                for i in range(0, len(gene_symbols), 25):  # Process in blocks of 25
+                    # For each block of 25, submit all tasks to the executor
+                    futures = [executor.submit(process_gene, gene_symbol) for gene_symbol in gene_symbols[i:i+25]]
+                    # Wait for all futures in the block to complete before proceeding
+                    concurrent.futures.wait(futures)
+                    # Update the progress bar
+                    progress_bar.progress((i + 25) / len(gene_symbols))
 
         else:
             st.error('Please upload an Excel file.')
+
+# The process_gene function
+def process_gene(gene_symbol):
+    try:
+        # Convert HGNC symbol to Ensembl ID
+        symbol, ensembl_id = symbol_to_id(gene_symbol)
+
+        # Fetch transcript IDs for the gene
+        transcripts = fetch_transcripts([ensembl_id])
+
+        if ensembl_id in transcripts:
+            transcript_ids = transcripts[ensembl_id]
+            if len(transcript_ids) == 1:  # Only fetch sequence for genes with one transcription
+                transcript_id = transcript_ids[0]
+                cds = fetch_cds(transcript_id)
+                if cds:
+                    add_gene_and_sequence(symbol, cds)
+            elif debug:
+                st.write(f"{symbol} - Not added, multiple CDS found.")
+        elif debug:
+            st.write(f"{symbol} - Not added, no CDS found.")
+    except Exception as e:
+        st.error(f'Failed to process {gene_symbol}: {e}')
 
 if __name__ == "__main__":
     main()
