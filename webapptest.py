@@ -4,7 +4,7 @@ import requests
 import concurrent.futures
 import time
 
-from sqlalchemy import create_engine, Column, String, ForeignKey, MetaData
+from sqlalchemy import create_engine, Column, String, ForeignKey
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -15,31 +15,18 @@ class Gene(Base):
     __tablename__ = 'genes'
 
     name = Column(String, primary_key=True)
-    transcriptions = relationship('Transcription', back_populates='gene')
-
-class Transcription(Base):
-    __tablename__ = 'transcriptions'
-
-    id = Column(String, primary_key=True)
     sequence = Column(String)
-    gene_name = Column(String, ForeignKey('genes.name'))
-    gene = relationship('Gene', back_populates='transcriptions')
 
 # Set up the database
 engine = create_engine('postgresql://xmybdbirwwaocp:d2a20d22a09e4948cda6b9688769effa0a9f0b0393c0af7ba95d04b07b5d6fff@ec2-52-205-45-222.compute-1.amazonaws.com:5432/d9addgatbiak5p')
 Session = sessionmaker(bind=engine)
 
-# Create all tables if they don't exist
-metadata = MetaData()
-metadata.reflect(bind=engine)
-if 'genes' not in metadata.tables:
+def setup_tables():
     Base.metadata.create_all(engine)
 
 
 
-
-
-def add_gene_and_transcriptions(gene_name, transcriptions):
+def add_gene_and_sequence(gene_name, sequence):
     # Start a new session
     session = Session()
 
@@ -50,16 +37,11 @@ def add_gene_and_transcriptions(gene_name, transcriptions):
             # If the gene already exists, skip it
             return
 
-        # Create a new gene
-        gene = Gene(name=gene_name)
+        # Create a new gene with its sequence
+        gene = Gene(name=gene_name, sequence=sequence)
 
         # Add the gene to the session
         session.add(gene)
-
-        # Create a new transcription for each sequence and add it to the session
-        for transcription_id, sequence in transcriptions.items():
-            transcription = Transcription(id=transcription_id, sequence=sequence, gene=gene)
-            session.add(transcription)
 
         # Commit the session to save the changes to the database
         session.commit()
@@ -70,6 +52,7 @@ def add_gene_and_transcriptions(gene_name, transcriptions):
     finally:
         # Always close the session when you're done with it
         session.close()
+
 
 
 
@@ -113,6 +96,9 @@ import pandas as pd
 
 # Streamlit app
 def main():
+    # Uncomment the line below when you need to setup the tables
+    setup_tables()
+    
     st.title('Fetch CDS Sequences')
 
     # File uploader for Excel file
@@ -145,25 +131,18 @@ def main():
             transcripts = fetch_transcripts([ensembl_id for ensembl_id in ensembl_ids.values() if ensembl_id])
 
             # Fetch CDS for each gene
-            with concurrent.futures.ThreadPoolExecutor() as executor:
-                for gene_symbol, ensembl_id in ensembl_ids.items():
-                    try:
-                        if ensembl_id in transcripts:
-                            transcript_ids = transcripts[ensembl_id]
-                            cds_dict = {}
-                            future_to_cds = {executor.submit(fetch_cds, transcript_id): transcript_id for transcript_id in transcript_ids}
-                            for future in concurrent.futures.as_completed(future_to_cds):
-                                transcript_id = future_to_cds[future]
-                                try:
-                                    cds = future.result()
-                                    if cds:
-                                        cds_dict[transcript_id] = cds
-                                except Exception as e:
-                                    st.error(f'Failed to fetch CDS for {gene_symbol} transcript {transcript_id}: {e}')
-                            if cds_dict:
-                                add_gene_and_transcriptions(gene_symbol, cds_dict)
-                    except Exception as e:
-                        st.error(f'Failed to fetch CDS for {gene_symbol}: {e}')
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            for gene_symbol, ensembl_id in ensembl_ids.items():
+                try:
+                    if ensembl_id in transcripts:
+                        transcript_ids = transcripts[ensembl_id]
+                        if len(transcript_ids) == 1:  # Only fetch sequence for genes with one transcription
+                            transcript_id = transcript_ids[0]
+                            cds = executor.submit(fetch_cds, transcript_id).result()
+                            if cds:
+                                add_gene_and_sequence(gene_symbol, cds)
+                except Exception as e:
+                    st.error(f'Failed to fetch CDS for {gene_symbol}: {e}')
         else:
             st.error('Please upload an Excel file.')
 
