@@ -131,40 +131,32 @@ def main():
             progress_bar = st.progress(0)
 
             # Convert HGNC symbols to Ensembl IDs
-            with concurrent.futures.ThreadPoolExecutor() as executor:
-                future_to_symbol = {executor.submit(symbol_to_id, gene_symbol): gene_symbol for gene_symbol in gene_symbols}
-                ensembl_ids = {}
-                for future in concurrent.futures.as_completed(future_to_symbol):
-                    gene_symbol = future_to_symbol[future]
-                    try:
-                        symbol, ensembl_id = future.result()
-                        ensembl_ids[symbol] = ensembl_id
-                    except Exception as e:
-                        st.error(f'Failed to fetch Ensembl ID for {gene_symbol}: {e}')
+            ensembl_ids = {}
+            for i, gene_symbol in enumerate(gene_symbols):
+                try:
+                    symbol, ensembl_id = symbol_to_id(gene_symbol)
+                    ensembl_ids[symbol] = ensembl_id
+                except Exception as e:
+                    st.error(f'Failed to fetch Ensembl ID for {gene_symbol}: {e}')
 
-            # Fetch transcript IDs for each gene
-            transcripts = fetch_transcripts([ensembl_id for ensembl_id in ensembl_ids.values() if ensembl_id])
+                # Fetch transcript IDs for each gene
+                transcripts = fetch_transcripts([ensembl_id for ensembl_id in ensembl_ids.values() if ensembl_id])
 
-            # Fetch CDS for each gene
-            with concurrent.futures.ThreadPoolExecutor() as executor:
-                for i, (gene_symbol, ensembl_id) in enumerate(ensembl_ids.items()):
-                    try:
-                        if ensembl_id in transcripts:
-                            transcript_ids = transcripts[ensembl_id]
-                            if len(transcript_ids) == 1:  # Only fetch sequence for genes with one transcription
-                                transcript_id = transcript_ids[0]
-                                cds = executor.submit(fetch_cds, transcript_id).result()
-                                if cds:
-                                    add_gene_and_sequence(gene_symbol, cds, i+1, len(ensembl_ids))
-                                elif debug:
-                                    st.write(f"Gene {i+1} of {len(ensembl_ids)}: {gene_symbol} - Not added, no CDS found.")
-                            elif debug:
-                                st.write(f"Gene {i+1} of {len(ensembl_ids)}: {gene_symbol} - Not added, multiple CDS found.")
-                    except Exception as e:
-                        st.error(f'Failed to fetch CDS for {gene_symbol}: {e}')
-                    
-                    # Update the progress bar
-                    progress_bar.progress((i+1) / len(ensembl_ids))
+                if ensembl_id in transcripts:
+                    transcript_ids = transcripts[ensembl_id]
+                    if len(transcript_ids) == 1:  # Only fetch sequence for genes with one transcription
+                        transcript_id = transcript_ids[0]
+                        cds = fetch_cds(transcript_id)
+                        if cds:
+                            add_gene_and_sequence(gene_symbol, cds, i+1, len(ensembl_ids))
+                        elif debug:
+                            st.write(f"Gene {i+1} of {len(ensembl_ids)}: {gene_symbol} - Not added, no CDS found.")
+                    elif debug:
+                        st.write(f"Gene {i+1} of {len(ensembl_ids)}: {gene_symbol} - Not added, multiple CDS found.")
+
+                # Update the progress bar
+                progress_bar.progress((i+1) / len(gene_symbols))
+
         else:
             st.error('Please upload an Excel file.')
 
