@@ -109,9 +109,9 @@ def main():
 
     st.title('Fetch CDS Sequences')
 
-    # Add debug button
-    debug_button = st.button('Turn on Debug')
-    debug = debug_button
+    # Add debug checkbox
+    debug_checkbox = st.checkbox('Enable Debugging')
+    debug = debug_checkbox
 
     # File uploader for Excel file
     file = st.file_uploader('Upload an Excel file:', type=['xlsx'], key="file_uploader")
