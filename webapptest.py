@@ -3,7 +3,7 @@ import pandas as pd
 import base64
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import Column, String
+from sqlalchemy import Column, String, Integer, Text
 from sqlalchemy.ext.declarative import declarative_base
 
 # Your database connection
@@ -20,10 +20,17 @@ class Gene(Base):
     name = Column(String, primary_key=True)
     sequence = Column(String)
 
+# Your PatientGeneExpression class
+class PatientGeneExpression(Base):
+    __tablename__ = 'patient_gene_expression'
+
+    id = Column(Integer, primary_key=True)
+    gene_expressions = Column(Text)
+
 Base.metadata.create_all(bind=engine)
 
 def main():
-    st.title("CSV File Cleaning")
+    st.title("CSV File Cleaning and Data Storing")
 
     csv_file = st.file_uploader("Upload CSV file", type=['csv'])
     if csv_file is not None:
@@ -32,7 +39,9 @@ def main():
         if st.button("Start Cleaning"):
             cleaned_df = clean_csv(df)
             st.dataframe(cleaned_df)
-            csv_download_link(cleaned_df)
+
+            if st.button("Store Gene Expressions"):
+                store_gene_expressions(cleaned_df)
 
 def clean_csv(df):
     # Create a session
@@ -46,6 +55,17 @@ def clean_csv(df):
     df = df.loc[:, df.columns.isin(gene_names)]
     
     return df
+
+def store_gene_expressions(df):
+    # Create a session
+    session = SessionLocal()
+
+    for i, row in df.iterrows():
+        gene_expressions = ','.join(map(str, row.tolist()))
+        patient = PatientGeneExpression(id=i+1, gene_expressions=gene_expressions)
+        session.add(patient)
+
+    session.commit()
 
 def csv_download_link(df):
     csv = df.to_csv(index=False)
