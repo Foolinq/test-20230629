@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 import pandas as pd
 import base64
@@ -6,8 +7,8 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import Column, String, Integer, Text
 from sqlalchemy.ext.declarative import declarative_base
 
-# Your database connection
-DATABASE_URL = "postgresql://user:password@localhost:5432/mydatabase"
+# Get your database connection from the environment variable
+DATABASE_URL = os.environ.get('DATABASE_URL')
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
