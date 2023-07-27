@@ -7,7 +7,7 @@ from sqlalchemy import Column, String, Integer, Text
 from sqlalchemy.ext.declarative import declarative_base
 
 # Your database connection
-DATABASE_URL = "postgresql://jqczrvezvwlzer:5980122424475b4fcdc2e539dbb0667d254452a21cd3cc633f9a64a8796da2df@ec2-3-212-70-5.compute-1.amazonaws.com:5432/d202roftknash2"
+DATABASE_URL = "postgresql://user:password@localhost:5432/mydatabase"
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -32,16 +32,21 @@ Base.metadata.create_all(bind=engine)
 def main():
     st.title("CSV File Cleaning and Data Storing")
 
-    csv_file = st.file_uploader("Upload CSV file", type=['csv'])
+    st.header("Clean CSV File")
+    csv_file = st.file_uploader("Upload CSV file for cleaning", type=['csv'])
     if csv_file is not None:
         df = pd.read_csv(csv_file)
-
         if st.button("Start Cleaning"):
             cleaned_df = clean_csv(df)
             st.dataframe(cleaned_df)
+            csv_download_link(cleaned_df)
 
-            if st.button("Store Gene Expressions"):
-                store_gene_expressions(cleaned_df)
+    st.header("Store Gene Expressions")
+    cleaned_csv_file = st.file_uploader("Upload cleaned CSV file for data storing", type=['csv'])
+    if cleaned_csv_file is not None:
+        cleaned_df = pd.read_csv(cleaned_csv_file)
+        if st.button("Store Gene Expressions"):
+            store_gene_expressions(cleaned_df)
 
 def clean_csv(df):
     # Create a session
