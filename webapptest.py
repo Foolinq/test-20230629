@@ -121,7 +121,11 @@ def calculate_codon_incorporation_and_frequency():
     # Create a gene to sequence map for faster lookup
     gene_sequence_map = {gene.name: gene.sequence for gene in genes}
 
-    for patient in patients:
+    # Progress bar
+    progress_bar = st.progress(0)
+    total_patients = len(patients)
+
+    for i, patient in enumerate(patients):
         patient_expressions = list(map(float, patient.gene_expressions.split(',')))
         for gene_name, expression in zip(gene_sequence_map.keys(), patient_expressions):
             # Query codons for the specific gene directly
@@ -130,6 +134,9 @@ def calculate_codon_incorporation_and_frequency():
                 if patient.id not in codon_incorporation_rates:
                     codon_incorporation_rates[patient.id] = defaultdict(int)
                 codon_incorporation_rates[patient.id][codon.codon] += codon.count * expression
+
+        # Update the progress bar after processing each patient
+        progress_bar.progress((i + 1) / total_patients)
 
     for patient_id, rates in codon_incorporation_rates.items():
         incorporation_rate = CodonIncorporationRate(id=patient_id, rates=json.dumps(rates))
