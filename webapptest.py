@@ -1,13 +1,13 @@
-import base64
 import streamlit as st
 import pandas as pd
+import base64
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import Column, String
 from sqlalchemy.ext.declarative import declarative_base
 
 # Your database connection
-DATABASE_URL = "postgresql://jqczrvezvwlzer:5980122424475b4fcdc2e539dbb0667d254452a21cd3cc633f9a64a8796da2df@ec2-3-212-70-5.compute-1.amazonaws.com:5432/d202roftknash2"
+DATABASE_URL = "postgresql://user:password@localhost:5432/mydatabase"
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -38,11 +38,12 @@ def clean_csv(df):
     # Create a session
     session = SessionLocal()
 
-    # Get column names from 'genes' table in the database
-    table_columns = [c.name for c in Gene.__table__.columns]
-    
-    # Drop columns from dataframe that do not exist in the database table
-    df = df.loc[:, df.columns.isin(table_columns)]
+    # Get gene names from 'genes' table in the database
+    gene_names = session.query(Gene.name).all()
+    gene_names = [gene[0] for gene in gene_names]
+
+    # Keep only columns from dataframe that exist in the 'genes' table
+    df = df.loc[:, df.columns.isin(gene_names)]
     
     return df
 
