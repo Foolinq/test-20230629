@@ -112,21 +112,24 @@ def calculate_codon_incorporation_and_frequency():
     # Create a session
     session = SessionLocal()
 
-    # Declaration of codon_incorporation_rates dictionary
-    codon_incorporation_rates = dict()
-    
+    # Declare codon_incorporation_rates dictionary
+    codon_incorporation_rates = {}
+
     patients = session.query(PatientGeneExpression).all()
     genes = session.query(Gene).all()
-    codons = session.query(Codon).all()
+
+    # Create a gene to sequence map for faster lookup
+    gene_sequence_map = {gene.name: gene.sequence for gene in genes}
 
     for patient in patients:
         patient_expressions = list(map(float, patient.gene_expressions.split(',')))
-        for gene, expression in zip(genes, patient_expressions):
+        for gene_name, expression in zip(gene_sequence_map.keys(), patient_expressions):
+            # Query codons for the specific gene directly
+            codons = session.query(Codon).filter(Codon.gene_name == gene_name).all()
             for codon in codons:
-                if codon.gene_name == gene.name:
-                    if patient.id not in codon_incorporation_rates:
-                        codon_incorporation_rates[patient.id] = defaultdict(int)
-                    codon_incorporation_rates[patient.id][codon.codon] += codon.count * expression
+                if patient.id not in codon_incorporation_rates:
+                    codon_incorporation_rates[patient.id] = defaultdict(int)
+                codon_incorporation_rates[patient.id][codon.codon] += codon.count * expression
 
     for patient_id, rates in codon_incorporation_rates.items():
         incorporation_rate = CodonIncorporationRate(id=patient_id, rates=json.dumps(rates))
