@@ -7,6 +7,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import Column, String, Integer, Text, Float, ForeignKey, UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from collections import defaultdict
+import json
 
 # Get your database connection from the environment variable
 DATABASE_URL = os.environ.get('DBURL')
@@ -110,6 +111,9 @@ def csv_download_link(df):
 def calculate_codon_incorporation_and_frequency():
     # Create a session
     session = SessionLocal()
+
+    # Declaration of codon_incorporation_rates dictionary
+    codon_incorporation_rates = dict()
     
     patients = session.query(PatientGeneExpression).all()
     genes = session.query(Gene).all()
