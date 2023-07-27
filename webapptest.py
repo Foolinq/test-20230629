@@ -9,7 +9,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from collections import defaultdict
 
 # Get your database connection from the environment variable
-DATABASE_URL = os.environ.get('DATABASE_URL')
+DATABASE_URL = os.environ.get('DBURL')
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
