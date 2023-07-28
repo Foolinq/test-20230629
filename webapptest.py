@@ -126,6 +126,10 @@ def calculate_codon_incorporation_and_frequency():
     total_patients = len(patients)
 
     for i, patient in enumerate(patients):
+        # Check if the incorporation rates and global frequencies for this patient have already been calculated
+        existing_incorporation_rate = session.query(CodonIncorporationRate).filter(CodonIncorporationRate.id == patient.id).first()
+        existing_global_frequency = session.query(GlobalCodonFrequency).filter(GlobalCodonFrequency.id == patient.id).first()
+
         patient_expressions = list(map(float, patient.gene_expressions.split(',')))
         global_codon_frequencies = defaultdict(int)
         for gene_name, expression in zip(gene_sequence_map.keys(), patient_expressions):
@@ -139,16 +143,20 @@ def calculate_codon_incorporation_and_frequency():
                 # Update global codon frequencies for the patient
                 global_codon_frequencies[codon.codon] += codon.count
 
+        # Store global codon frequencies into the database if not existing
+        if not existing_global_frequency:
+            global_freq = GlobalCodonFrequency(id=patient.id, frequencies=json.dumps(global_codon_frequencies))
+            session.add(global_freq)
+
         # Update the progress bar after processing each patient
         progress_bar.progress((i + 1) / total_patients)
 
-        # Store global codon frequencies into the database
-        global_freq = GlobalCodonFrequency(id=patient.id, frequencies=json.dumps(global_codon_frequencies))
-        session.add(global_freq)
-
     for patient_id, rates in codon_incorporation_rates.items():
-        incorporation_rate = CodonIncorporationRate(id=patient_id, rates=json.dumps(rates))
-        session.add(incorporation_rate)
+        # Only add new records to the database
+        existing_incorporation_rate = session.query(CodonIncorporationRate).filter(CodonIncorporationRate.id == patient_id).first()
+        if not existing_incorporation_rate:
+            incorporation_rate = CodonIncorporationRate(id=patient_id, rates=json.dumps(rates))
+            session.add(incorporation_rate)
 
     session.commit()
 
