@@ -132,6 +132,7 @@ def calculate_codon_incorporation_and_frequency():
 
         patient_expressions = list(map(float, patient.gene_expressions.split(',')))
         global_codon_frequencies = defaultdict(int)
+        total_codon_count = 0  # Keep track of the total count of all codons for this patient
         for gene_name, expression in zip(gene_sequence_map.keys(), patient_expressions):
             # Query codons for the specific gene directly
             codons = session.query(Codon).filter(Codon.gene_name == gene_name).all()
@@ -142,6 +143,10 @@ def calculate_codon_incorporation_and_frequency():
 
                 # Update global codon frequencies for the patient
                 global_codon_frequencies[codon.codon] += codon.count
+                total_codon_count += codon.count
+
+        # Calculate global codon frequencies as a percentage
+        global_codon_frequencies = {codon: (count / total_codon_count) * 100 for codon, count in global_codon_frequencies.items()}
 
         # Store global codon frequencies into the database if not existing
         if not existing_global_frequency:
@@ -159,6 +164,7 @@ def calculate_codon_incorporation_and_frequency():
             session.add(incorporation_rate)
 
     session.commit()
+
 
 if __name__ == "__main__":
     main()
