@@ -127,6 +127,7 @@ def calculate_codon_incorporation_and_frequency():
 
     for i, patient in enumerate(patients):
         patient_expressions = list(map(float, patient.gene_expressions.split(',')))
+        global_codon_frequencies = defaultdict(int)
         for gene_name, expression in zip(gene_sequence_map.keys(), patient_expressions):
             # Query codons for the specific gene directly
             codons = session.query(Codon).filter(Codon.gene_name == gene_name).all()
@@ -135,8 +136,15 @@ def calculate_codon_incorporation_and_frequency():
                     codon_incorporation_rates[patient.id] = defaultdict(int)
                 codon_incorporation_rates[patient.id][codon.codon] += codon.count * expression
 
+                # Update global codon frequencies for the patient
+                global_codon_frequencies[codon.codon] += codon.count
+
         # Update the progress bar after processing each patient
         progress_bar.progress((i + 1) / total_patients)
+
+        # Store global codon frequencies into the database
+        global_freq = GlobalCodonFrequency(id=patient.id, frequencies=json.dumps(global_codon_frequencies))
+        session.add(global_freq)
 
     for patient_id, rates in codon_incorporation_rates.items():
         incorporation_rate = CodonIncorporationRate(id=patient_id, rates=json.dumps(rates))
