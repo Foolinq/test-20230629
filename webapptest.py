@@ -1,17 +1,11 @@
 import os
 import streamlit as st
-from langchain.vectorstores.pgvector import PGVector
+import psycopg2  # Assuming you're using PostgreSQL
 
-# Get the database URL from Heroku's Config Vars
-CONNECTION_STRING = os.environ['DBURL']
-
-# Initialize PGVector for LangChain
-vector_store = PGVector(CONNECTION_STRING)
-
+# Placeholder for LangChain processing
 def process_prompt_with_langchain(prompt):
-    # This is a placeholder; you'll need to implement the actual processing logic with LangChain
+    # TODO: Implement the actual processing logic with LangChain
     # For now, it just returns the prompt as a mock SQL command
-    # In reality, you'd use LangChain's capabilities to generate a SQL command based on the prompt
     sql_command = f"SELECT * FROM table WHERE column = '{prompt}';"
     return sql_command
 
@@ -30,6 +24,17 @@ sql_command = process_prompt_with_langchain(user_prompt)
 # Display SQL if debug mode is enabled or if there's a user prompt
 if debug_mode or user_prompt:
     st.text_area("Generated SQL:", value=sql_command)
+
+# Connect to the database and execute the SQL command
+CONNECTION_STRING = os.environ['DBURL']
+conn = psycopg2.connect(CONNECTION_STRING)
+cursor = conn.cursor()
+cursor.execute(sql_command)
+results = cursor.fetchall()
+conn.close()
+
+# Display the results (or handle them as needed)
+st.write(results)
 
 # Placeholder for future features
 st.write("More features coming soon!")
