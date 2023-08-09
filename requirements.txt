@@ -1,9 +1,5 @@
 streamlit
 langchain
 openai
-biopython
-openpyxl
-pandas
-xlrd
-psycopg2-binary
 pgvector
+dotenv
