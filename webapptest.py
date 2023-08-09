@@ -1,98 +1,39 @@
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, UniqueConstraint
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
-from collections import Counter
+import os
+import streamlit as st
+from langchain.vectorstores.pgvector import PGVector
+from dotenv import load_dotenv
 
-# Define the database
-DATABASE_URI = 'postgresql://jqczrvezvwlzer:5980122424475b4fcdc2e539dbb0667d254452a21cd3cc633f9a64a8796da2df@ec2-3-212-70-5.compute-1.amazonaws.com:5432/d202roftknash2'
-engine = create_engine(DATABASE_URI)
-Session = sessionmaker(bind=engine)
-Base = declarative_base()
+# Load environment variables
+_ = load_dotenv()
 
-class Gene(Base):
-    __tablename__ = 'genes'
+# Set up the connection string for LangChain and PostgreSQL
+host = os.environ['TIMESCALE_HOST']
+port = os.environ['TIMESCALE_PORT']
+user = os.environ['TIMESCALE_USER']
+password = os.environ['TIMESCALE_PASSWORD']
+dbname = os.environ['TIMESCALE_DBNAME']
+CONNECTION_STRING = f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{dbname}?sslmode=require"
 
-    name = Column(String, primary_key=True)
-    sequence = Column(String)
+# Initialize PGVector for LangChain
+vector_store = PGVector(CONNECTION_STRING)
 
-class Codon(Base):
-    __tablename__ = 'codons'
+def process_prompt_with_langchain(prompt):
+    # This is a placeholder; you'll need to implement the actual processing logic with LangChain
+    # For now, it just returns the prompt as a mock SQL command
+    # In reality, you'd use LangChain's capabilities to generate a SQL command based on the prompt
+    sql_command = f"SELECT * FROM table WHERE column = '{prompt}';"
+    return sql_command
 
-    id = Column(Integer, primary_key=True)
-    gene_name = Column(String, ForeignKey('genes.name'))
-    codon = Column(String)
-    amino_acid = Column(String)
-    count = Column(Integer)
-    __table_args__ = (UniqueConstraint('gene_name', 'codon', name='uc_gene_codon'), )
+# Streamlit interface
+st.title("LangChain SQL Generator")
 
-# Define the genetic code
-GENETIC_CODE = {
-    'ATA':'I', 'ATC':'I', 'ATT':'I', 'ATG':'M', 
-    'ACA':'T', 'ACC':'T', 'ACG':'T', 'ACT':'T', 
-    'AAC':'N', 'AAT':'N', 'AAA':'K', 'AAG':'K', 
-    'AGC':'S', 'AGT':'S', 'AGA':'R', 'AGG':'R',                  
-    'CTA':'L', 'CTC':'L', 'CTG':'L', 'CTT':'L', 
-    'CCA':'P', 'CCC':'P', 'CCG':'P', 'CCT':'P', 
-    'CAC':'H', 'CAT':'H', 'CAA':'Q', 'CAG':'Q', 
-    'CGA':'R', 'CGC':'R', 'CGG':'R', 'CGT':'R', 
-    'GTA':'V', 'GTC':'V', 'GTG':'V', 'GTT':'V', 
-    'GCA':'A', 'GCC':'A', 'GCG':'A', 'GCT':'A', 
-    'GAC':'D', 'GAT':'D', 'GAA':'E', 'GAG':'E', 
-    'GGA':'G', 'GGC':'G', 'GGG':'G', 'GGT':'G', 
-    'TCA':'S', 'TCC':'S', 'TCG':'S', 'TCT':'S', 
-    'TTC':'F', 'TTT':'F', 'TTA':'L', 'TTG':'L', 
-    'TAC':'Y', 'TAT':'Y', 'TAA':'_', 'TAG':'_', 
-    'TGC':'C', 'TGT':'C', 'TGA':'_', 'TGG':'W', 
-}
+# User input
+user_prompt = st.text_input("Enter your prompt:")
 
-def setup_tables():
-    Base.metadata.create_all(engine)
+# Process the prompt with LangChain and display SQL
+if user_prompt:
+    sql_command = process_prompt_with_langchain(user_prompt)
+    st.text_area("Generated SQL:", value=sql_command)
 
-def add_codon(gene_name, codon, amino_acid, count):
-    session = Session()
-
-    try:
-        new_codon = Codon(gene_name=gene_name, codon=codon, amino_acid=amino_acid, count=count)
-        session.add(new_codon)
-        session.commit()
-    except:
-        session.rollback()
-        raise
-    finally:
-        session.close()
-
-def process_gene_codons(gene_name):
-    session = Session()
-
-    try:
-        gene = session.query(Gene).filter_by(name=gene_name).first()
-
-        sequence = gene.sequence
-        codons = [sequence[i:i+3] for i in range(0, len(sequence), 3)]
-
-        codon_counter = Counter(codons)
-
-        for codon, count in codon_counter.items():
-            if len(codon) != 3:
-                continue
-
-            amino_acid = GENETIC_CODE.get(codon, 'X')
-            add_codon(gene_name, codon, amino_acid, count)
-    except Exception as e:
-        print(f'Failed to process {gene_name}: {e}')
-    finally:
-        session.close()
-
-if __name__ == "__main__":
-    setup_tables()
-
-    # Query all the genes from your database
-    session = Session()
-    gene_names = [gene.name for gene in session.query(Gene).all()]
-    session.close()
-
-    # Process all the genes
-    for gene_name in gene_names:
-        process_gene_codons(gene_name)
-
-    print("Done!")
+# Placeholder for future features
+st.write("More features coming soon!")
