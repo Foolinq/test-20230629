@@ -1,8 +1,9 @@
 streamlit
-langchain==0.0.197
+langchain
 openai
 biopython
 openpyxl
 pandas
 xlrd
 psycopg2-binary
+pgvector
