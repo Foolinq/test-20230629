@@ -1,40 +1,38 @@
 import os
 import streamlit as st
-import psycopg2  # Assuming you're using PostgreSQL
+import psycopg2
+import openai  # OpenAI's Python client library
 
-# Placeholder for LangChain processing
-def process_prompt_with_langchain(prompt):
-    # TODO: Implement the actual processing logic with LangChain
-    # For now, it just returns the prompt as a mock SQL command
-    sql_command = f"SELECT * FROM table WHERE column = '{prompt}';"
-    return sql_command
+# Function to translate natural language prompt to SQL using GPT (via LangChain)
+def translate_prompt_to_sql(prompt):
+    # TODO: Implement the actual call to LangChain or GPT to translate the prompt to SQL
+    # For now, returning a mock SQL command
+    return f"SELECT * FROM my_table WHERE my_column = '{prompt}';"
 
 # Streamlit interface
-st.title("LangChain SQL Generator")
+st.title("Natural Language to SQL Translator")
 
-# Debug mode checkbox
-debug_mode = st.checkbox("Enable Debug Mode")
+# User input for natural language prompt
+user_prompt = st.text_input("Enter your natural language prompt:")
 
-# User input
-user_prompt = st.text_input("Enter your prompt:")
+# Translate the prompt to SQL using GPT (via LangChain)
+sql_command = translate_prompt_to_sql(user_prompt)
 
-# Process the prompt with LangChain
-sql_command = process_prompt_with_langchain(user_prompt)
+# Display the generated SQL for user confirmation
+if user_prompt:
+    if st.button("Execute the following SQL command?"):
+        st.text_area("Generated SQL:", value=sql_command)
 
-# Display SQL if debug mode is enabled or if there's a user prompt
-if debug_mode or user_prompt:
-    st.text_area("Generated SQL:", value=sql_command)
+        # Connect to the database and execute the SQL command
+        CONNECTION_STRING = os.environ['DBURL']
+        conn = psycopg2.connect(CONNECTION_STRING)
+        cursor = conn.cursor()
+        cursor.execute(sql_command)
+        results = cursor.fetchall()
+        conn.close()
 
-# Connect to the database and execute the SQL command
-CONNECTION_STRING = os.environ['DBURL']
-conn = psycopg2.connect(CONNECTION_STRING)
-cursor = conn.cursor()
-cursor.execute(sql_command)
-results = cursor.fetchall()
-conn.close()
-
-# Display the results (or handle them as needed)
-st.write(results)
+        # Display the results
+        st.write(results)
 
 # Placeholder for future features
 st.write("More features coming soon!")
