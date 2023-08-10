@@ -1,3 +1,4 @@
+import os
 from langchain.agents import create_sql_agent
 from langchain.agents.agent_toolkits import SQLDatabaseToolkit
 from langchain.sql_database import SQLDatabase
@@ -5,11 +6,14 @@ from langchain.llms.openai import OpenAI
 from langchain.agents import AgentExecutor
 from langchain.agents.agent_types import AgentType
 from langchain.chat_models import ChatOpenAI
+import streamlit as st
 
 
 
-db = SQLDatabase.from_uri("sqlite:///path/to/your/database.db")
+db_url = os.environ.get("DBURL")
+db = SQLDatabase.from_uri(db_url)
 toolkit = SQLDatabaseToolkit(db=db, llm=OpenAI(temperature=0))
+
 
 
 
@@ -19,6 +23,7 @@ agent_executor = create_sql_agent(
     verbose=True,
     agent_type=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
 )
+
 
 
 
