@@ -5,7 +5,7 @@ import streamlit as st
 
 
 
-API_KEY = os.environ.get('OPENAI_API_KEY')
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
 DBURL = os.environ.get('DBURL')
 
 
