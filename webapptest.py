@@ -18,6 +18,7 @@ db_chain = SQLDatabaseChain.from_llm(llm, db)
 # Query Function
 def query_database(prompt):
     inputs = {"query": prompt}
+    response = db_chain(inputs)
     return response['result']
 
 # Streamlit Interface
