@@ -3,3 +3,4 @@ langchain
 openai
 pgvector
 psycopg2
+python-environ
