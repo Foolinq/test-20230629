@@ -1,6 +1,6 @@
 import os
 from langchain import OpenAI, SQLDatabase
-from langchain.chains import SQLDatabaseSequentialChain
+from langchain_experimental.sql import SQLDatabaseChain
 import streamlit as st
 
 
