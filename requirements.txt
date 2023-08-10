@@ -4,3 +4,4 @@ openai
 pgvector
 psycopg2
 python-environ
+langchain_experimental
