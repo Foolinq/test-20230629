@@ -25,14 +25,17 @@ def query_database(prompt, return_sql=False):
 def main():
     st.title('Natural Language Query Interface')
     user_input = st.text_input('Please enter your natural language query:')
+    
     send_button = st.button('Send')
+    check_button = st.button('Check')
+
     if send_button and user_input:
+        response = query_database(user_input)
+        st.write(response)
+
+    if check_button and user_input:
         sql_query = query_database(user_input, return_sql=True)
         st.write(f"SQL Query: {sql_query}")
-        confirm_button = st.button('Confirm')
-        if confirm_button:
-            response = query_database(user_input)
-            st.write(response)
 
 if __name__ == '__main__':
     main()
