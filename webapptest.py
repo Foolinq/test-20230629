@@ -20,6 +20,7 @@ sql_command = translate_prompt_to_sql(user_prompt)
 
 # Display the generated SQL for user confirmation
 if user_prompt:
+# TODO: Make generated SQL visible before user confirmation
     if st.button("Execute the following SQL command?"):
         st.text_area("Generated SQL:", value=sql_command)
 
