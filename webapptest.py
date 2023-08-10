@@ -22,6 +22,9 @@ class CustomPrompt(BasePromptTemplate):
     def format(self, **kwargs):
         return self.template.format(**kwargs)
 
+    def format_prompt(self, **kwargs):
+        return self.format(**kwargs)
+
 # Set up LangChain with the custom prompt
 custom_prompt = CustomPrompt()
 db_chain = SQLDatabaseChain.from_llm(llm, db, prompt=custom_prompt)
