@@ -12,12 +12,13 @@ db = SQLDatabase.from_uri(DBURL)
 
 # Set Up LangChain
 llm = OpenAI(temperature=0, openai_api_key=OPENAI_API_KEY, model_name='gpt-3.5-turbo')
-db_chain = SQLDatabaseChain.from_llm(llm, db, return_sql=True)  # Set return_sql to True
+db_chain = SQLDatabaseChain.from_llm(llm, db)
 
 # Query Function
-def query_database(prompt):
+def query_database(prompt, return_sql=False):
+    db_chain.return_sql = return_sql
     inputs = {"query": prompt}
-    response = db_chain(inputs)  # Return SQL without executing
+    response = db_chain(inputs)
     return response['result']
 
 # Streamlit Interface
@@ -26,11 +27,10 @@ def main():
     user_input = st.text_input('Please enter your natural language query:')
     send_button = st.button('Send')
     if send_button and user_input:
-        sql_query = query_database(user_input)
+        sql_query = query_database(user_input, return_sql=True)
         st.write(f"SQL Query: {sql_query}")
         confirm_button = st.button('Confirm')
         if confirm_button:
-            db_chain.return_sql = False  # Set return_sql to False to execute the query
             response = query_database(user_input)
             st.write(response)
 
