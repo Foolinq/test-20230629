@@ -1,31 +1,31 @@
 import os
-from langchain import SQLDatabase, SQLDatabaseChain
-from langchain.chat_models import ChatOpenAI
+from langchain import OpenAI, SQLDatabase
+from langchain.chains import SQLDatabaseSequentialChain
 import streamlit as st
+
 
 
 API_KEY = os.environ.get('OPENAI_API_KEY')
 DBURL = os.environ.get('DBURL')
 
 
+
+
 db = SQLDatabase.from_uri(DBURL)
 
 
-llm = ChatOpenAI(temperature=0, openai_api_key=API_KEY, model_name='gpt-3.5-turbo')
 
-QUERY = """
-Given an input question, first create a syntactically correct postgresql query to run, then look at the results of the query and return the answer.
-Use the following format:
 
-Question: "Question here"
-SQLQuery: "SQL Query to run"
-SQLResult: "Result of the SQLQuery"
-Answer: "Final answer here"
+llm = OpenAI(temperature=0, openai_api_key=OPENAI_API_KEY, model_name='gpt-3.5-turbo')
 
-{question}
+PROMPT = """
+Given an input question, first create a syntactically correct postgresql query to run,
+then look at the results of the query and return the answer.
+The question: {question}
 """
 
-db_chain = SQLDatabaseChain(llm=llm, database=db, verbose=True)
+db_chain = SQLDatabaseSequentialChain(llm=llm, database=db, verbose=True, top_k=3)
+
 
 
 def query_database(prompt):
