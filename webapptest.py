@@ -86,7 +86,7 @@ def process_gene_codons(gene_name):
 if __name__ == "__main__":
     setup_tables()
 
-    # Query all the genes from your database
+    # Query all the genes from database
     session = Session()
     gene_names = [gene.name for gene in session.query(Gene).all()]
     session.close()
