@@ -34,21 +34,16 @@ def add_gene_and_sequence(gene_name, sequence):
     session = Session()
 
     try:
-        # Create a new gene with its sequence
         gene = Gene(name=gene_name, sequence=sequence)
 
-        # Add the gene to the session
         session.add(gene)
 
-        # Commit the session to save the changes to the database
         session.commit()
 
     except:
-        # If an error occurs, roll back the session
         session.rollback()
         raise
     finally:
-        # Always close the session when you're done with it
         session.close()
 
 def add_invalid_gene(gene_name):
@@ -56,28 +51,22 @@ def add_invalid_gene(gene_name):
     session = Session()
 
     try:
-        # Create a new invalid gene
         invalid_gene = InvalidGene(name=gene_name)
 
-        # Add the invalid gene to the session
         session.add(invalid_gene)
 
-        # Commit the session to save the changes to the database
         session.commit()
 
     except:
-        # If an error occurs, roll back the session
         session.rollback()
         raise
     finally:
-        # Always close the session when you're done with it
         session.close()
 
 def setup_tables():
     Base.metadata.create_all(engine)
 
 def add_gene_and_sequence(gene_name, sequence):
-    # Start a new session
     session = Session()
 
     try:
@@ -87,21 +76,16 @@ def add_gene_and_sequence(gene_name, sequence):
             # If the gene already exists, skip it
             return
 
-        # Create a new gene with its sequence
         gene = Gene(name=gene_name, sequence=sequence)
 
-        # Add the gene to the session
         session.add(gene)
 
-        # Commit the session to save the changes to the database
         session.commit()
 
     except:
-        # If an error occurs, roll back the session
         session.rollback()
         raise
     finally:
-        # Always close the session when you're done with it
         session.close()
 
 # Function to convert HGNC symbol to Ensembl ID
@@ -136,14 +120,13 @@ def fetch_cds(transcript_id):
             time.sleep(retry_after)
             return fetch_cds(transcript_id)
         return None
-    seq = "".join(r.text.split("\n")[1:])  # Remove the fasta header
+    seq = "".join(r.text.split("\n")[1:]) # Remove FASTA header
     return seq
 
 import pandas as pd
 
 # Streamlit app
 def main():
-    # Uncomment the line below when you need to setup the tables
     setup_tables()
 
     st.title('Fetch CDS Sequences')
@@ -188,7 +171,7 @@ def process_gene(gene_symbol):
             # Convert HGNC symbol to Ensembl ID
             symbol, ensembl_id = symbol_to_id(gene_symbol)
 
-            if ensembl_id:  # The API request was successful
+            if ensembl_id: 
                 # Fetch transcript IDs for the gene
                 transcripts = fetch_transcripts([ensembl_id])
 
