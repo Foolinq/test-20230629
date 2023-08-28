@@ -32,7 +32,7 @@ def preprocess_input(user_input):
 # Streamlit Interface
 def main():
     st.title('Natural Language Query Interface')
-    user_input = st.text_input('Please enter your natural language query:')
+    user_input = st.text_input('Please enter your query:')
     
     send_button = st.button('Send')
     check_button = st.button('Check')
