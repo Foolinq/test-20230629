@@ -9,21 +9,19 @@ from sqlalchemy.ext.declarative import declarative_base
 from collections import defaultdict
 import json
 
-# Get your database connection from the environment variable
+# Get database connection from env
 DATABASE_URL = os.environ.get('DBURL')
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-# Your Gene class
 class Gene(Base):
     __tablename__ = 'genes'
 
     name = Column(String, primary_key=True)
     sequence = Column(String)
 
-# Your PatientGeneExpression class
 class PatientGeneExpression(Base):
     __tablename__ = 'patient_gene_expression'
 
@@ -79,7 +77,6 @@ def main():
         st.write("Analysis complete.")
 
 def clean_csv(df):
-    # Create a session
     session = SessionLocal()
 
     # Get gene names from 'genes' table in the database
@@ -92,7 +89,6 @@ def clean_csv(df):
     return df
 
 def store_gene_expressions(df):
-    # Create a session
     session = SessionLocal()
 
     for i, row in df.iterrows():
@@ -109,10 +105,8 @@ def csv_download_link(df):
     st.markdown(href, unsafe_allow_html=True)
 
 def calculate_codon_incorporation_and_frequency():
-    # Create a session
     session = SessionLocal()
 
-    # Declare codon_incorporation_rates dictionary
     codon_incorporation_rates = {}
 
     patients = session.query(PatientGeneExpression).all()
